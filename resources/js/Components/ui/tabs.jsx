@@ -84,7 +84,9 @@ export const FadeInDiv = ({ className, tabs, hovering }) => {
 
     return (
         <div className="relative w-full h-full">
-            {tabs.map((tab, idx) => (
+            {/* Only the active tab (first after reordering) is rendered: the hidden
+                ones used to mount a full candidate grid, photos included, behind it. */}
+            {tabs.slice(0, 1).map((tab, idx) => (
                 <motion.div
                     key={tab.value}
                     layoutId={tab.value}

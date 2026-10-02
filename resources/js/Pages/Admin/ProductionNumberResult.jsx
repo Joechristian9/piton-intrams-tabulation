@@ -20,12 +20,14 @@ const ProductionNumberResult = ({
                 title="Female Candidates"
                 candidates={femaleCandidates}
                 judgeOrder={judgeOrder}
+                maxScore={10}
                 category={`${categoryName} Female Results`}
             />
             <ResultTable
                 title="Male Candidates"
                 candidates={maleCandidates}
                 judgeOrder={judgeOrder}
+                maxScore={10}
                 category={`${categoryName} Male Results`}
             />
         </PageLayout>

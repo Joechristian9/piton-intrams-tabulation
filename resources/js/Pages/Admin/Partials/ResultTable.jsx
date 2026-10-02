@@ -11,8 +11,15 @@ import {
     TableCaption,
 } from "@/components/ui/table";
 import PrintButton from "./PrintButton";
+import CandidatePhoto from "@/Components/CandidatePhoto";
 
-const ResultTable = ({ title, candidates, judgeOrder, category }) => {
+const ResultTable = ({
+    title,
+    candidates,
+    judgeOrder,
+    category,
+    maxScore,
+}) => {
     const tableRef = React.useRef();
 
     return (
@@ -49,7 +56,14 @@ const ResultTable = ({ title, candidates, judgeOrder, category }) => {
                                         .toUpperCase()}
                                 </TableHead>
                             ))}
-                            <TableHead className="text-center">Total</TableHead>
+                            <TableHead className="text-center">
+                                Average
+                                {maxScore && (
+                                    <span className="block text-xs font-normal opacity-70">
+                                        out of {maxScore}
+                                    </span>
+                                )}
+                            </TableHead>
                             <TableHead className="text-center">Rank</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -68,16 +82,12 @@ const ResultTable = ({ title, candidates, judgeOrder, category }) => {
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
-                                        <img
-                                            src={
-                                                c.candidate.profile_img
-                                                    ? `/${c.candidate.profile_img.replace(
-                                                          "admin/",
-                                                          ""
-                                                      )}`
-                                                    : "/default-avatar.png"
-                                            }
+                                        <CandidatePhoto
+                                            path={c.candidate.profile_img}
+                                            size="thumb"
                                             alt={`${c.candidate.first_name} ${c.candidate.last_name}`}
+                                            width={32}
+                                            height={32}
                                             className="w-8 h-8 rounded-full object-cover"
                                         />
                                         <span>

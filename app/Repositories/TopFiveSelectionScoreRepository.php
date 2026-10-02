@@ -3,30 +3,40 @@
 namespace App\Repositories;
 
 use App\Models\TopFiveSelectionScore;
+use Illuminate\Support\Facades\DB;
 
 class TopFiveSelectionScoreRepository
 {
-    public function updateOrCreateScore(int $judgeId, int $candidateId, string $category, $scoreValue)
+    /**
+     * Save one judge's scores for a category: [candidateId => score].
+     * One query loads the existing rows and a single transaction commits every
+     * write, instead of a lookup and a separate commit per candidate.
+     */
+    public function saveScores(int $judgeId, string $category, array $scores): void
     {
-        // Find existing record or create a new one
-        $record = TopFiveSelectionScore::firstOrNew([
-            'judge_id' => $judgeId,
-            'candidate_id' => $candidateId,
-        ]);
+        DB::transaction(function () use ($judgeId, $category, $scores) {
+            $existing = TopFiveSelectionScore::where('judge_id', $judgeId)
+                ->whereIn('candidate_id', array_keys($scores))
+                ->get()
+                ->keyBy('candidate_id');
 
-        // Update only the current category score
-        $record->{$category} = $scoreValue;
+            foreach ($scores as $candidateId => $scoreValue) {
+                $record = $existing->get($candidateId)
+                    ?? new TopFiveSelectionScore(['judge_id' => $judgeId, 'candidate_id' => $candidateId]);
 
-        // Recalculate the total for all categories
-        $record->total_scores =
-            ($record->production_number ?? 0) +
-            ($record->casual_wear ?? 0) +
-            ($record->swim_wear ?? 0) +
-            ($record->formal_wear ?? 0) +
-            ($record->closed_door_interview ?? 0);
+                // Update only the current category score
+                $record->{$category} = $scoreValue;
 
-        $record->save();
+                // Recalculate the total for all categories
+                $record->total_scores =
+                    ($record->production_number ?? 0) +
+                    ($record->casual_wear ?? 0) +
+                    ($record->swim_wear ?? 0) +
+                    ($record->formal_wear ?? 0) +
+                    ($record->closed_door_interview ?? 0);
 
-        return $record;
+                $record->save();
+            }
+        });
     }
 }

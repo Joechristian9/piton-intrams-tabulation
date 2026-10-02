@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { Head } from "@inertiajs/react";
 import PageLayout from "@/Layouts/PageLayout";
 import StarsBackground from "@/Components/backgrounds/stars";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ export default function Dashboard({ auth }) {
     }, [user]);
     return (
         <PageLayout user={auth?.user}>
+            <Head title="Dashboard" />
             <div className="relative flex-1 w-full h-full rounded-xl overflow-hidden">
                 {/* 🌌 Starry background */}
                 <StarsBackground

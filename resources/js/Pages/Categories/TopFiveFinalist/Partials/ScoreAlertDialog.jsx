@@ -13,6 +13,7 @@ import {
     AlertDialogCancel,
     AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import CandidatePhoto from "@/Components/CandidatePhoto";
 
 const ScoreAlertDialog = ({
     candidates,
@@ -86,12 +87,12 @@ const ScoreAlertDialog = ({
                                         </td>
                                         <td className="p-2 border-b border-gray-600">
                                             <div className="flex items-center gap-2">
-                                                <img
-                                                    src={
-                                                        c.profile_img ||
-                                                        "/default-avatar.png"
-                                                    }
+                                                <CandidatePhoto
+                                                    path={c.profile_img}
+                                                    size="thumb"
                                                     alt={`${c.first_name} ${c.last_name}`}
+                                                    width={24}
+                                                    height={24}
                                                     className="w-6 h-6 rounded-full object-cover"
                                                 />
                                                 <span>

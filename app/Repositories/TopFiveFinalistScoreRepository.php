@@ -2,29 +2,50 @@
 
 namespace App\Repositories;
 
+use App\Models\TopFiveCandidates;
 use App\Models\TopFiveScore;
+use Illuminate\Support\Facades\DB;
 
 class TopFiveFinalistScoreRepository
 {
-    public function updateOrCreateScore(int $judgeId, int $topFiveId, string $category, $scoreValue)
+    /**
+     * Save one judge's finals scores for a category: [candidateId => score].
+     * Candidates who aren't finalists are skipped. Finalists and existing rows
+     * are each loaded in one query, and every write commits in one transaction.
+     */
+    public function saveScores(int $judgeId, string $category, array $scores): void
     {
-        // Use top_five_id instead of candidate_id
-        $record = TopFiveScore::firstOrNew([
-            'judge_id' => $judgeId,
-            'top_five_id' => $topFiveId,
-        ]);
+        DB::transaction(function () use ($judgeId, $category, $scores) {
+            // candidate_id => top_five_id
+            $finalists = TopFiveCandidates::whereIn('candidate_id', array_keys($scores))
+                ->pluck('id', 'candidate_id');
 
-        // Update only the current category score
-        $record->{$category} = $scoreValue;
+            $existing = TopFiveScore::where('judge_id', $judgeId)
+                ->whereIn('top_five_id', $finalists->values())
+                ->get()
+                ->keyBy('top_five_id');
 
-        // Recalculate total score
-        $record->total_score =
-            ($record->face_and_figure ?? 0) +
-            ($record->delivery ?? 0) +
-            ($record->overall_appeal ?? 0);
+            foreach ($scores as $candidateId => $scoreValue) {
+                $topFiveId = $finalists->get($candidateId);
 
-        $record->save();
+                if (! $topFiveId) {
+                    continue;
+                }
 
-        return $record;
+                $record = $existing->get($topFiveId)
+                    ?? new TopFiveScore(['judge_id' => $judgeId, 'top_five_id' => $topFiveId]);
+
+                // Update only the current category score
+                $record->{$category} = $scoreValue;
+
+                // Recalculate total score
+                $record->total_score =
+                    ($record->face_and_figure ?? 0) +
+                    ($record->delivery ?? 0) +
+                    ($record->overall_appeal ?? 0);
+
+                $record->save();
+            }
+        });
     }
 }

@@ -2,6 +2,7 @@
 
 import React from "react";
 import ScoreInput from "./ScoreInput";
+import CandidatePhoto from "@/Components/CandidatePhoto";
 
 const CandidateGrid = ({
     candidates,
@@ -40,11 +41,11 @@ const CandidateGrid = ({
                         key={candidateKey}
                         className="bg-neutral-900 border border-white/20 rounded-xl p-4 shadow-[0_4px_15px_rgba(255,255,255,0.3)] hover:shadow-[0_6px_25px_rgba(255,255,255,0.5)] transition-shadow duration-300 flex flex-col items-center gap-3 overflow-hidden"
                     >
-                        <img
-                            loading="lazy"
-                            decoding="async"
-                            src={imageSrc || defaultImage}
+                        <CandidatePhoto
+                            path={imageSrc || defaultImage}
                             alt={`${candidate.first_name} ${candidate.last_name}`}
+                            width={480}
+                            height={720}
                             className="w-full h-72 object-cover rounded-md"
                         />
 
