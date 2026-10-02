@@ -31,6 +31,12 @@ return [
     |
     */
 
+    /*
+    | Store for the live-update feeds (judge submissions, judge notifications).
+    | File cache in the app; tests switch it to the array store.
+    */
+    'feed_store' => env('CACHE_FEED_STORE', 'file'),
+
     'stores' => [
 
         'array' => [

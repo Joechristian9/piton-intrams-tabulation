@@ -1,10 +1,10 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CandidateController;
 use App\Http\Controllers\JudgeController;
+use App\Http\Controllers\JudgeNotificationController;
 use App\Http\Controllers\ScoreSubmissionController;
 use App\Http\Controllers\ResultController\TopFiveSelectionResultController;
 use App\Http\Controllers\ResultController\TopFiveCandidateResultController;
@@ -14,12 +14,7 @@ use App\Http\Controllers\TopFiveScoreController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return Inertia::render('Welcome');
 });
 
 Route::get('/dashboard', function () {
@@ -114,6 +109,17 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
         ->name('admin.judges.store');
     Route::put('/admin/judges/{judge}', [JudgeController::class, 'update'])
         ->name('admin.judges.update');
+
+    Route::get('/admin/notify-judges', [JudgeNotificationController::class, 'index'])
+        ->name('admin.notify_judges');
+    Route::post('/admin/notify-judges', [JudgeNotificationController::class, 'store'])
+        ->name('admin.notify_judges.send');
+});
+
+// Judges poll this for notifications from the admin
+Route::middleware('auth')->group(function () {
+    Route::get('/judge/notifications', [JudgeNotificationController::class, 'feed'])
+        ->name('judge.notifications');
 });
 
 // Admin toast alerts for judge submissions

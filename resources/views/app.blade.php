@@ -6,6 +6,12 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
+        <!-- Browser tab / home-screen icons (PITON logo) -->
+        <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <meta name="theme-color" content="#000000">
+
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />

@@ -5,7 +5,7 @@ import PageLayout from "@/Layouts/PageLayout";
 import ResultTable from "./Partials/ResultTable";
 
 const ClosedDoorInterviewResult = ({
-    categoryName = "Closed Door Interview",
+    categoryName = "Casual Interview",
     maleCandidates = [],
     femaleCandidates = [],
     judgeOrder = [],
@@ -20,12 +20,14 @@ const ClosedDoorInterviewResult = ({
                 title="Female Candidates"
                 candidates={femaleCandidates}
                 judgeOrder={judgeOrder}
+                maxScore={15}
                 category={`${categoryName} Female Results`}
             />
             <ResultTable
                 title="Male Candidates"
                 candidates={maleCandidates}
                 judgeOrder={judgeOrder}
+                maxScore={15}
                 category={`${categoryName} Male Results`}
             />
         </PageLayout>

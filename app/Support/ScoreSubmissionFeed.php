@@ -4,27 +4,16 @@ namespace App\Support;
 
 use App\Models\Candidate;
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
 
 /**
- * Short-lived list of recent judge submissions, kept in the file cache
- * (not the database) so admin pages can show toast alerts.
+ * Recent judge submissions, shown to admins as toast alerts.
  */
 class ScoreSubmissionFeed
 {
-    private const KEY = 'score-submission-feed';
-    private const LIMIT = 50;
-
-    private const CATEGORIES = [
-        'production_number'     => 'Production Number',
-        'casual_wear'           => 'Sports Wear',
-        'swim_wear'             => 'Swim Wear',
-        'formal_wear'           => 'Formal Wear',
-        'closed_door_interview' => 'Closed Door Interview',
-        'face_and_figure'       => 'Beauty of the Face and Figure',
-        'delivery'              => 'Delivery',
-        'overall_appeal'        => 'Over-all Appeal / X-factor',
-    ];
+    private static function feed(): EventFeed
+    {
+        return new EventFeed('score-submission-feed');
+    }
 
     public static function push(int $judgeId, string $category, array $candidateIds): void
     {
@@ -33,21 +22,9 @@ class ScoreSubmissionFeed
         $genders = Candidate::whereIn('id', $candidateIds)->pluck('gender')->unique();
         $group = $genders->count() === 1 ? ucfirst($genders->first()) . ' ' : '';
 
-        $label = self::CATEGORIES[$category] ?? $category;
-        $message = "{$judge} submitted {$group}{$label} scores";
+        $label = Criteria::LABELS[$category] ?? $category;
 
-        $store = Cache::store('file');
-
-        // Lock so two judges submitting at once don't overwrite each other.
-        $store->lock(self::KEY . '-lock', 5)->block(5, function () use ($store, $message) {
-            $feed = $store->get(self::KEY, ['seq' => 0, 'events' => []]);
-
-            $feed['seq']++;
-            $feed['events'][] = ['id' => $feed['seq'], 'message' => $message];
-            $feed['events'] = array_slice($feed['events'], -self::LIMIT);
-
-            $store->put(self::KEY, $feed, now()->addDay());
-        });
+        self::feed()->push(['message' => "{$judge} submitted {$group}{$label} scores"]);
     }
 
     /**
@@ -55,7 +32,7 @@ class ScoreSubmissionFeed
      */
     public static function since(?int $after): array
     {
-        $feed = Cache::store('file')->get(self::KEY, ['seq' => 0, 'events' => []]);
+        $feed = self::feed()->read();
 
         return [
             'seq' => $feed['seq'],

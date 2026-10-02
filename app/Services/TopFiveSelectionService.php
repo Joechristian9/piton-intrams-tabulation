@@ -21,8 +21,7 @@ class TopFiveSelectionService
         $judgeOrder = $this->judgeOrder();
 
         // Get all candidates
-        $maleCandidatesList = Candidate::where('gender', 'male')->get();
-        $femaleCandidatesList = Candidate::where('gender', 'female')->get();
+        [$maleCandidatesList, $femaleCandidatesList] = $this->candidatesByGender();
 
         // Load all scores at once
         $scores = TopFiveSelectionScore::all()->groupBy('candidate_id');
@@ -59,7 +58,7 @@ class TopFiveSelectionService
             $processed[] = [
                 'candidate' => $candidate,
                 'scores' => $candidateScores,
-                'total' => round(array_sum($candidateScores), 2),
+                'total' => round(array_sum($candidateScores) / max(1, count($judgeOrder)), 2),
                 'rank' => 0,
                 'candidate_number' => $count,
             ];
@@ -71,24 +70,28 @@ class TopFiveSelectionService
     public function getTopFiveSelectionResults()
     {
         // Get all candidates
-        $maleCandidatesList = Candidate::where('gender', 'male')->get();
-        $femaleCandidatesList = Candidate::where('gender', 'female')->get();
+        [$maleCandidatesList, $femaleCandidatesList] = $this->candidatesByGender();
 
         // Load all scores at once
+        $judgeOrder = $this->judgeOrder();
         $scores = TopFiveSelectionScore::all()->groupBy('candidate_id');
 
-        $maleCandidates = $this->processTotalPerCategory($maleCandidatesList, $scores);
-        $femaleCandidates = $this->processTotalPerCategory($femaleCandidatesList, $scores);
+        $maleCandidates = $this->processTotalPerCategory($maleCandidatesList, $scores, count($judgeOrder));
+        $femaleCandidates = $this->processTotalPerCategory($femaleCandidatesList, $scores, count($judgeOrder));
 
         return [
             'maleCandidates' => $maleCandidates,
             'femaleCandidates' => $femaleCandidates,
             'categories' => $this->categories,
-            'judgeOrder' => $this->judgeOrder(),
+            'judgeOrder' => $judgeOrder,
         ];
     }
 
-    protected function processTotalPerCategory($candidatesList, $scores)
+    /**
+     * Per-category score = the average of all judges' scores, so each category
+     * is out of its own maximum and the round total is out of 100.
+     */
+    protected function processTotalPerCategory($candidatesList, $scores, int $judgeCount)
     {
         $processed = [];
         $count = 0;
@@ -107,10 +110,13 @@ class TopFiveSelectionService
                 }
             }
 
+            // Average over the whole panel (a judge who hasn't scored yet counts as 0).
+            $averages = array_map(fn ($sum) => $sum / max(1, $judgeCount), $categoryTotals);
+
             $processed[] = [
                 'candidate' => $candidate,
-                'scores' => $categoryTotals,
-                'total' => round(array_sum($categoryTotals), 2),
+                'scores' => array_map(fn ($avg) => round($avg, 2), $averages),
+                'total' => round(array_sum($averages), 2),
                 'rank' => 0,
                 'candidate_number' => $count,
             ];
@@ -137,6 +143,16 @@ class TopFiveSelectionService
         }
 
         return $candidates;
+    }
+
+    /**
+     * Male and female candidates from a single query.
+     */
+    private function candidatesByGender(): array
+    {
+        $byGender = Candidate::all()->groupBy('gender');
+
+        return [$byGender->get('male', collect()), $byGender->get('female', collect())];
     }
 
     /**

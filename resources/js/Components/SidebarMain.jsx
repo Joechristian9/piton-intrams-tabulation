@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { usePage } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
 import {
     Sidebar,
     SidebarBody,
@@ -23,6 +23,7 @@ import {
     Trophy,
     ChevronUp,
     Users,
+    BellRing,
 } from "lucide-react";
 
 export default function SidebarMain({ children }) {
@@ -178,8 +179,22 @@ export default function SidebarMain({ children }) {
                   },
               ];
 
+    const managementLinks =
+        user?.role === "admin"
+            ? [
+                  { label: "Judges", icon: <Users />, route: "admin.judges.index" },
+                  { label: "Notify Judges", icon: <BellRing />, route: "admin.notify_judges" },
+              ]
+            : [];
+
+    // The browser tab is named after the active sidebar item, so tab and menu always match.
+    const activeLink = [...mainLinks, ...top5Links, ...managementLinks].find(
+        (link) => isActive(link.route)
+    );
+
     return (
         <div className="dark">
+            {activeLink && <Head title={activeLink.label.trim()} />}
             <div
                 className={cn(
                     "flex flex-1 flex-col overflow-hidden rounded-md border border-neutral-200 bg-gray-100 md:flex-row dark:border-neutral-700 dark:bg-neutral-800 w-full h-screen"
@@ -212,13 +227,7 @@ export default function SidebarMain({ children }) {
                                 <>
                                     <SidebarHeader label="Management" />
                                     <div className="mt-2 flex flex-col gap-2">
-                                        {renderLinks([
-                                            {
-                                                label: "Judges",
-                                                icon: <Users />,
-                                                route: "admin.judges.index",
-                                            },
-                                        ])}
+                                        {renderLinks(managementLinks)}
                                     </div>
                                 </>
                             )}

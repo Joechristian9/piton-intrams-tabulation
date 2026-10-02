@@ -23,15 +23,7 @@ class TopFiveService
         $judgeOrder = $this->judgeOrder();
 
         // Get only top 5 males and females
-        $maleCandidatesList = TopFiveCandidates::with('candidate')
-            ->whereHas('candidate', fn($q) => $q->where('gender', 'male'))
-            ->get()
-            ->map(fn($item) => ['candidate' => $item->candidate, 'top_five_id' => $item->id]);
-
-        $femaleCandidatesList = TopFiveCandidates::with('candidate')
-            ->whereHas('candidate', fn($q) => $q->where('gender', 'female'))
-            ->get()
-            ->map(fn($item) => ['candidate' => $item->candidate, 'top_five_id' => $item->id]);
+        [$maleCandidatesList, $femaleCandidatesList] = $this->finalistsByGender();
 
         // Load all scores
         $scores = TopFiveScore::all()->groupBy('top_five_id');
@@ -70,7 +62,7 @@ class TopFiveService
             $processed[] = [
                 'candidate'        => $candidate,
                 'scores'           => $candidateScores,
-                'total'            => round(array_sum($candidateScores), 2),
+                'total'            => round(array_sum($candidateScores) / max(1, count($judgeOrder)), 2),
                 'rank'             => 0,
                 'candidate_number' => $count,
             ];
@@ -79,7 +71,11 @@ class TopFiveService
         return $this->assignRanking($processed);
     }
 
-    protected function processTotalPerCategory($candidatesList, $scores)
+    /**
+     * Per-category score = the average of all judges' scores, so each category
+     * is out of its own maximum and the round total is out of 100.
+     */
+    protected function processTotalPerCategory($candidatesList, $scores, int $judgeCount)
     {
         $processed = [];
         $count = 0;
@@ -98,10 +94,13 @@ class TopFiveService
                 }
             }
 
+            // Average over the whole panel (a judge who hasn't scored yet counts as 0).
+            $averages = array_map(fn ($sum) => $sum / max(1, $judgeCount), $categoryTotals);
+
             $processed[] = [
                 'candidate'        => $candidate,
-                'scores'           => $categoryTotals,
-                'total'            => round(array_sum($categoryTotals), 2),
+                'scores'           => array_map(fn ($avg) => round($avg, 2), $averages),
+                'total'            => round(array_sum($averages), 2),
                 'rank'             => 0,
                 'candidate_number' => $count,
             ];
@@ -134,25 +133,33 @@ class TopFiveService
     {
         $judgeOrder = $this->judgeOrder();
 
-        $maleCandidatesList = TopFiveCandidates::with('candidate')
-            ->whereHas('candidate', fn($q) => $q->where('gender', 'male'))
-            ->get()
-            ->map(fn($item) => ['candidate' => $item->candidate, 'top_five_id' => $item->id]);
-
-        $femaleCandidatesList = TopFiveCandidates::with('candidate')
-            ->whereHas('candidate', fn($q) => $q->where('gender', 'female'))
-            ->get()
-            ->map(fn($item) => ['candidate' => $item->candidate, 'top_five_id' => $item->id]);
+        [$maleCandidatesList, $femaleCandidatesList] = $this->finalistsByGender();
 
         $scores = TopFiveScore::all()->groupBy('top_five_id');
 
-        $maleCandidates   = $this->processTotalPerCategory($maleCandidatesList, $scores);
-        $femaleCandidates = $this->processTotalPerCategory($femaleCandidatesList, $scores);
+        $maleCandidates   = $this->processTotalPerCategory($maleCandidatesList, $scores, count($judgeOrder));
+        $femaleCandidates = $this->processTotalPerCategory($femaleCandidatesList, $scores, count($judgeOrder));
 
         return [
             'maleCandidates'   => $maleCandidates,
             'femaleCandidates' => $femaleCandidates,
             'judgeOrder'       => $judgeOrder,
+        ];
+    }
+
+    /**
+     * Male and female finalists (with their candidate) from a single query.
+     */
+    private function finalistsByGender(): array
+    {
+        $byGender = TopFiveCandidates::with('candidate')->get()
+            ->filter(fn ($item) => $item->candidate)
+            ->map(fn ($item) => ['candidate' => $item->candidate, 'top_five_id' => $item->id])
+            ->groupBy(fn ($item) => $item['candidate']->gender);
+
+        return [
+            $byGender->get('male', collect())->values(),
+            $byGender->get('female', collect())->values(),
         ];
     }
 

@@ -11,9 +11,25 @@ import {
     TableCaption,
 } from "@/components/ui/table";
 import PrintButton from "./PrintButton";
+import CandidatePhoto from "@/Components/CandidatePhoto";
 
 // Display names that differ from the category key.
-const CATEGORY_LABELS = { casual_wear: "Sports Wear" };
+const CATEGORY_LABELS = {
+    casual_wear: "Sports Wear",
+    closed_door_interview: "Casual Interview",
+};
+
+// Highest score a judge can give per category; each round adds up to 100.
+const CATEGORY_MAX = {
+    production_number: 10,
+    casual_wear: 25,
+    swim_wear: 25,
+    formal_wear: 25,
+    closed_door_interview: 15,
+    face_and_figure: 50,
+    delivery: 40,
+    overall_appeal: 10,
+};
 
 const TopFiveSelectionTable = ({
     title,
@@ -53,9 +69,19 @@ const TopFiveSelectionTable = ({
                                         CATEGORY_LABELS[cat] ??
                                         cat.replaceAll("_", " ")
                                     ).toUpperCase()}
+                                    {CATEGORY_MAX[cat] && (
+                                        <span className="block text-xs font-normal opacity-70">
+                                            out of {CATEGORY_MAX[cat]}
+                                        </span>
+                                    )}
                                 </TableHead>
                             ))}
-                            <TableHead className="text-center">Total</TableHead>
+                            <TableHead className="text-center">
+                                Total
+                                <span className="block text-xs font-normal opacity-70">
+                                    out of 100
+                                </span>
+                            </TableHead>
                             <TableHead className="text-center"> Rank</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -74,16 +100,12 @@ const TopFiveSelectionTable = ({
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
-                                        <img
-                                            src={
-                                                c.candidate.profile_img
-                                                    ? `/${c.candidate.profile_img.replace(
-                                                          "admin/",
-                                                          ""
-                                                      )}`
-                                                    : "/default-avatar.png"
-                                            }
+                                        <CandidatePhoto
+                                            path={c.candidate.profile_img}
+                                            size="thumb"
                                             alt={`${c.candidate.first_name} ${c.candidate.last_name}`}
+                                            width={32}
+                                            height={32}
                                             className="w-8 h-8 rounded-full object-cover"
                                         />
                                         <span>

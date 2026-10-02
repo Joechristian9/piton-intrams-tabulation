@@ -56,7 +56,7 @@ class FinalistScoresTest extends TestCase
         $this->assertSame(1, $scoreQueries);
     }
 
-    public function test_admin_results_sum_scores_per_finalist(): void
+    public function test_admin_results_average_scores_per_finalist(): void
     {
         [$a, $b] = $this->finalists(2);
         $admin = User::factory()->create(['role' => 'admin']);
@@ -73,9 +73,9 @@ class FinalistScoresTest extends TestCase
         $first = $rows->firstWhere('candidate.id', $a->candidate_id);
         $second = $rows->firstWhere('candidate.id', $b->candidate_id);
 
-        $this->assertEquals(50, $first['total']);
+        $this->assertEquals(25, $first['total']);   // (30 + 20) / 2 judges
         $this->assertEquals(1, $first['rank']);
-        $this->assertEquals(10, $second['total']);
+        $this->assertEquals(5, $second['total']);   // 10 / 2 judges (the other judge has not scored)
         $this->assertEquals(2, $second['rank']);
         $this->assertEquals(30, $first['scores'][$j1->id]);
         $this->assertEquals(20, $first['scores'][$j2->id]);

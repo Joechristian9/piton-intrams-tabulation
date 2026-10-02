@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Repositories\TopFiveFinalistScoreRepository;
-use App\Models\TopFiveCandidates;
+use App\Support\Criteria;
 use App\Support\ScoreSubmissionFeed;
 use Illuminate\Http\Request;
 
@@ -24,22 +24,14 @@ class TopFiveScoreController extends Controller
         $request->validate([
             'judge_id' => 'required|exists:users,id',
             'scores' => 'required|array',
+            // A judge can never give more than the category's maximum.
+            'scores.*' => ['required', 'numeric', 'min:0', 'max:' . Criteria::max($category)],
         ]);
 
         $judgeId = $request->input('judge_id');
         $scores = $request->input('scores');
 
-        foreach ($scores as $candidateId => $scoreValue) {
-            $topFive = TopFiveCandidates::where('candidate_id', $candidateId)->first();
-
-            if (!$topFive) {
-                continue;
-            }
-
-            $topFiveId = $topFive->id;
-
-            $this->scores->updateOrCreateScore($judgeId, $topFiveId, $category, $scoreValue);
-        }
+        $this->scores->saveScores($judgeId, $category, $scores);
 
         ScoreSubmissionFeed::push($judgeId, $category, array_keys($scores));
 

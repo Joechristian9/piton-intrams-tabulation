@@ -78,7 +78,7 @@ class TopFiveSelectionResultController extends Controller
             'maleCandidates' => $results['maleCandidates'],
             'femaleCandidates' => $results['femaleCandidates'],
             'judgeOrder' => $results['judgeOrder'],
-            'categoryName' => 'Closed Door Interview',
+            'categoryName' => 'Casual Interview',
         ]);
     }
     public function topFiveSelectionResults()
