@@ -118,19 +118,27 @@ export const MobileSidebar = ({ className, children, ...props }) => {
     );
 };
 
-export const SidebarLink = ({ link, className, ...props }) => {
+export const SidebarLink = ({ link, className, active = false, ...props }) => {
     const { open, animate } = useSidebar();
 
     return (
         <a
             href={link.href}
             onClick={link.onClick} // ✅ attach the onClick from your link
+            aria-current={active ? "page" : undefined}
             className={cn(
-                "flex items-center justify-start gap-2 group/sidebar py-2",
+                "relative flex items-center justify-start gap-2 group/sidebar py-2 px-2 -mx-2 rounded-lg transition-colors",
+                active
+                    ? "bg-neutral-200 dark:bg-neutral-700/70"
+                    : "hover:bg-neutral-200/60 dark:hover:bg-neutral-700/30",
                 className
             )}
             {...props}
         >
+            {/* Accent bar marking the current page */}
+            {active && (
+                <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-full bg-amber-400" />
+            )}
             {link.icon}
             <motion.span
                 animate={{
@@ -141,7 +149,12 @@ export const SidebarLink = ({ link, className, ...props }) => {
                         : "inline-block",
                     opacity: animate ? (open ? 1 : 0) : 1,
                 }}
-                className="text-neutral-700 dark:text-neutral-200 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+                className={cn(
+                    "text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0",
+                    active
+                        ? "text-black dark:text-white font-semibold"
+                        : "text-neutral-700 dark:text-neutral-200"
+                )}
             >
                 {link.label}
             </motion.span>

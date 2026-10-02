@@ -36,6 +36,8 @@ const CandidateGrid = ({
                         className="bg-neutral-900 border border-white/20 rounded-xl p-4 shadow-[0_4px_15px_rgba(255,255,255,0.3)] hover:shadow-[0_6px_25px_rgba(255,255,255,0.5)] transition-shadow duration-300 flex flex-col items-center gap-3 overflow-hidden"
                     >
                         <img
+                            loading="lazy"
+                            decoding="async"
                             src={imageSrc || defaultImage}
                             alt={`${candidate.first_name} ${candidate.last_name}`}
                             className="w-full h-72 object-cover rounded-md"

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Repositories\TopFiveFinalistScoreRepository;
 use App\Models\TopFiveCandidates;
+use App\Support\ScoreSubmissionFeed;
 use Illuminate\Http\Request;
 
 class TopFiveScoreController extends Controller
@@ -39,6 +40,8 @@ class TopFiveScoreController extends Controller
 
             $this->scores->updateOrCreateScore($judgeId, $topFiveId, $category, $scoreValue);
         }
+
+        ScoreSubmissionFeed::push($judgeId, $category, array_keys($scores));
 
         return back();
     }

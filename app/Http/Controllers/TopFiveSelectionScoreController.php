@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Repositories\TopFiveSelectionScoreRepository;
+use App\Support\ScoreSubmissionFeed;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -28,6 +29,8 @@ class TopFiveSelectionScoreController extends Controller
         foreach ($scores as $candidateId => $scoreValue) {
             $this->scores->updateOrCreateScore($judgeId, $candidateId, $category, $scoreValue);
         }
+
+        ScoreSubmissionFeed::push($judgeId, $category, array_keys($scores));
 
         return back();
     }

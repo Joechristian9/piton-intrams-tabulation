@@ -1,9 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { router } from "@inertiajs/react";
 import PageLayout from "@/Layouts/PageLayout";
 import TopFiveSelectionTable from "./Partials/TopFiveSelectionTable";
+import TieBreakDialog, {
+    FINALIST_COUNT,
+    planFinalists,
+} from "./Partials/TieBreakDialog";
 import { HoverBorderGradient } from "@/Components/ui/hover-border-gradient";
 import { toast } from "sonner";
 
@@ -12,42 +16,63 @@ const TopFiveSelectionResult = ({
     maleCandidates,
     femaleCandidates,
     categories,
+    judgeOrder = [],
 }) => {
-    const handleSetTopFive = () => {
-        const maleTop5 = maleCandidates
-            .filter((c) => c.rank <= 3)
-            .map((c) => c.candidate.id);
+    // Set when there's a tie at the cutoff and the admin needs to pick.
+    const [tiePlan, setTiePlan] = useState(null);
 
-        const femaleTop5 = femaleCandidates
-            .filter((c) => c.rank <= 3)
-            .map((c) => c.candidate.id);
-
-        const allTop5 = [...maleTop5, ...femaleTop5];
-
-        if (maleTop5.length !== 3 || femaleTop5.length !== 3) {
-            toast.error(
-                "There must be exactly 5 male and 5 female top-ranked candidates."
-            );
-            return;
-        }
-
-        const loadingToastId = toast.loading("Saving Top 5...");
+    const saveFinalists = (candidateIds) => {
+        const loadingToastId = toast.loading(
+            `Saving Top ${FINALIST_COUNT}...`
+        );
 
         router.post(
             route("topFive.set"),
-            { candidate_ids: allTop5 },
+            { candidate_ids: candidateIds },
             {
                 preserveScroll: true,
                 onSuccess: () => {
                     toast.dismiss(loadingToastId);
-                    toast.success("Top 5 Male & Female saved successfully!");
+                    toast.success(
+                        `Top ${FINALIST_COUNT} Male & Female saved successfully!`
+                    );
+                    setTiePlan(null);
                 },
-                onError: () => {
+                onError: (errors) => {
                     toast.dismiss(loadingToastId);
-                    toast.error("Failed to save Top 5.");
+                    toast.error(
+                        errors.candidate_ids ??
+                            `Failed to save Top ${FINALIST_COUNT}.`
+                    );
                 },
             }
         );
+    };
+
+    const handleSetTopThree = () => {
+        const plan = {
+            female: planFinalists(femaleCandidates),
+            male: planFinalists(maleCandidates),
+        };
+
+        for (const [gender, p] of Object.entries(plan)) {
+            if (p.slots > p.tied.length) {
+                toast.error(
+                    `Not enough ${gender} candidates for a Top ${FINALIST_COUNT}.`
+                );
+                return;
+            }
+        }
+
+        if (plan.female.slots === 0 && plan.male.slots === 0) {
+            saveFinalists(
+                [...plan.female.sure, ...plan.male.sure].map(
+                    (c) => c.candidate.id
+                )
+            );
+        } else {
+            setTiePlan(plan);
+        }
     };
 
     return (
@@ -56,20 +81,22 @@ const TopFiveSelectionResult = ({
                 {categoryName}
             </h2>
 
-            {/* Male Table */}
-            <TopFiveSelectionTable
-                title="Male Candidates"
-                candidates={maleCandidates}
-                categories={categories}
-                category={`${categoryName} Male Results`}
-            />
-
             {/* Female Table */}
             <TopFiveSelectionTable
                 title="Female Candidates"
                 candidates={femaleCandidates}
                 categories={categories}
+                judges={judgeOrder}
                 category={`${categoryName} Female Results`}
+            />
+
+            {/* Male Table */}
+            <TopFiveSelectionTable
+                title="Male Candidates"
+                candidates={maleCandidates}
+                categories={categories}
+                judges={judgeOrder}
+                category={`${categoryName} Male Results`}
             />
 
             <div className="flex justify-center mb-10">
@@ -77,11 +104,19 @@ const TopFiveSelectionResult = ({
                     containerClassName="rounded-full"
                     as="button"
                     className="dark:bg-neutral-800 bg-white text-black dark:text-neutral-100 flex items-center space-x-2 px-12 py-1 text-lg font-semibold"
-                    onClick={handleSetTopFive}
+                    onClick={handleSetTopThree}
                 >
                     <span>Set Top 3 (Male & Female)</span>
                 </HoverBorderGradient>
             </div>
+
+            {tiePlan && (
+                <TieBreakDialog
+                    plan={tiePlan}
+                    onCancel={() => setTiePlan(null)}
+                    onConfirm={saveFinalists}
+                />
+            )}
         </PageLayout>
     );
 };

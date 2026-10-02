@@ -5,7 +5,7 @@ import PageLayout from "@/Layouts/PageLayout";
 import ResultTable from "./Partials/ResultTable";
 
 const CasualWearResult = ({
-    categoryName = "Casual Wear",
+    categoryName = "Sports Wear",
     maleCandidates = [],
     femaleCandidates = [],
     judgeOrder = [],
@@ -17,16 +17,16 @@ const CasualWearResult = ({
             </h2>
 
             <ResultTable
-                title="Male Candidates"
-                candidates={maleCandidates}
-                judgeOrder={judgeOrder}
-                category={`${categoryName} Male Results`}
-            />
-            <ResultTable
                 title="Female Candidates"
                 candidates={femaleCandidates}
                 judgeOrder={judgeOrder}
                 category={`${categoryName} Female Results`}
+            />
+            <ResultTable
+                title="Male Candidates"
+                candidates={maleCandidates}
+                judgeOrder={judgeOrder}
+                category={`${categoryName} Male Results`}
             />
         </PageLayout>
     );

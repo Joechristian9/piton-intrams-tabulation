@@ -12,7 +12,16 @@ import {
 } from "@/components/ui/table";
 import PrintButton from "./PrintButton";
 
-const TopFiveSelectionTable = ({ title, candidates, categories, category }) => {
+// Display names that differ from the category key.
+const CATEGORY_LABELS = { casual_wear: "Sports Wear" };
+
+const TopFiveSelectionTable = ({
+    title,
+    candidates,
+    categories,
+    category,
+    judges = [],
+}) => {
     const tableRef = React.useRef();
 
     return (
@@ -23,6 +32,7 @@ const TopFiveSelectionTable = ({ title, candidates, categories, category }) => {
                     title={title}
                     tableRef={tableRef}
                     category={category}
+                    judges={judges}
                 />
             </div>
 
@@ -39,7 +49,10 @@ const TopFiveSelectionTable = ({ title, candidates, categories, category }) => {
                             <TableHead>Candidate</TableHead>
                             {categories.map((cat) => (
                                 <TableHead key={cat} className="text-center">
-                                    {cat.replace("_", " ").toUpperCase()}
+                                    {(
+                                        CATEGORY_LABELS[cat] ??
+                                        cat.replaceAll("_", " ")
+                                    ).toUpperCase()}
                                 </TableHead>
                             ))}
                             <TableHead className="text-center">Total</TableHead>

@@ -4,6 +4,8 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CandidateController;
+use App\Http\Controllers\JudgeController;
+use App\Http\Controllers\ScoreSubmissionController;
 use App\Http\Controllers\ResultController\TopFiveSelectionResultController;
 use App\Http\Controllers\ResultController\TopFiveCandidateResultController;
 use App\Http\Controllers\TopFiveSelectionScoreController;
@@ -102,6 +104,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('admin.overall_appeal');
     Route::get('/admin/total_results', [TopFiveCandidateResultController::class, 'totalResults'])
         ->name('admin.top_five_finalist');
+});
+
+// Admin Judges Management Routes
+Route::middleware(['auth', 'verified', 'admin'])->group(function () {
+    Route::get('/admin/judges', [JudgeController::class, 'index'])
+        ->name('admin.judges.index');
+    Route::post('/admin/judges', [JudgeController::class, 'store'])
+        ->name('admin.judges.store');
+    Route::put('/admin/judges/{judge}', [JudgeController::class, 'update'])
+        ->name('admin.judges.update');
+});
+
+// Admin toast alerts for judge submissions
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/admin/score-submissions', [ScoreSubmissionController::class, 'index'])
+        ->name('admin.score_submissions');
 });
 
 Route::middleware('auth')->group(function () {

@@ -23,6 +23,7 @@ const ResultTable = ({ title, candidates, judgeOrder, category }) => {
                     title={title}
                     tableRef={tableRef}
                     category={category}
+                    judges={judgeOrder}
                 />
             </div>
 
@@ -39,8 +40,13 @@ const ResultTable = ({ title, candidates, judgeOrder, category }) => {
                             <TableHead>#</TableHead>
                             <TableHead>Candidate</TableHead>
                             {judgeOrder.map((judge) => (
-                                <TableHead key={judge} className="text-center">
-                                    {judge.replace("_", " ").toUpperCase()}
+                                <TableHead
+                                    key={judge.id}
+                                    className="text-center"
+                                >
+                                    {judge.name
+                                        .replaceAll("_", " ")
+                                        .toUpperCase()}
                                 </TableHead>
                             ))}
                             <TableHead className="text-center">Total</TableHead>
@@ -82,10 +88,10 @@ const ResultTable = ({ title, candidates, judgeOrder, category }) => {
                                 </TableCell>
                                 {judgeOrder.map((judge) => (
                                     <TableCell
-                                        key={judge}
+                                        key={judge.id}
                                         className="text-center"
                                     >
-                                        {Number(c.scores[judge] ?? 0).toFixed(
+                                        {Number(c.scores[judge.id] ?? 0).toFixed(
                                             2
                                         )}
                                     </TableCell>

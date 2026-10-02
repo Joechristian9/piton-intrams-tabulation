@@ -7,6 +7,13 @@ import { Tabs } from "@/Components/ui/tabs";
 import CandidateGrid from "./Partials/CandidateGrid";
 import ScoreAlertDialog from "../Partials/ScoreAlertDialog";
 import { toast } from "sonner";
+import {
+    loadDraftScores,
+    saveDraftScores,
+    clearDraftScores,
+} from "@/lib/scoreDrafts";
+
+const DRAFT_CATEGORY = "beauty_face_figure";
 
 const BeautyFaceFigure = ({ candidates }) => {
     const judgeId = usePage().props.auth.user.id;
@@ -14,7 +21,7 @@ const BeautyFaceFigure = ({ candidates }) => {
     const maleCandidates = candidates.filter((c) => c.gender === "male");
     const femaleCandidates = candidates.filter((c) => c.gender === "female");
 
-    const scoresRef = useRef({});
+    const scoresRef = useRef(loadDraftScores(DRAFT_CATEGORY, judgeId));
 
     const TabContent = ({ candidates }) => {
         const [_, setRerender] = useState(0);
@@ -22,6 +29,7 @@ const BeautyFaceFigure = ({ candidates }) => {
 
         const handleScoreChange = (candidateId, score) => {
             scoresRef.current[candidateId] = score;
+            saveDraftScores(DRAFT_CATEGORY, judgeId, scoresRef.current);
             setRerender((r) => r + 1);
         };
 
@@ -59,6 +67,11 @@ const BeautyFaceFigure = ({ candidates }) => {
                 },
                 {
                     onSuccess: () => {
+                        clearDraftScores(
+                            DRAFT_CATEGORY,
+                            judgeId,
+                            Object.keys(filteredScores)
+                        );
                         toast.success("Scores submitted successfully!");
                         setSubmitted(true);
                         router.reload();
@@ -95,16 +108,16 @@ const BeautyFaceFigure = ({ candidates }) => {
 
     const tabs = [
         {
-            title: "Male Candidates",
-            value: "male",
-            category: "Male Beauty of the Face and Figure",
-            content: <TabContent candidates={maleCandidates} />,
-        },
-        {
             title: "Female Candidates",
             value: "female",
             category: "Female Beauty of the Face and Figure",
             content: <TabContent candidates={femaleCandidates} />,
+        },
+        {
+            title: "Male Candidates",
+            value: "male",
+            category: "Male Beauty of the Face and Figure",
+            content: <TabContent candidates={maleCandidates} />,
         },
     ];
 
