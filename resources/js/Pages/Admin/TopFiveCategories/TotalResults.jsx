@@ -9,6 +9,7 @@ const TotalResults = ({
     maleCandidates = [],
     femaleCandidates = [],
     categories = ["face_and_figure", "delivery", "overall_appeal"],
+    judgeOrder = [],
 }) => {
     return (
         <PageLayout>
@@ -16,20 +17,22 @@ const TotalResults = ({
                 {categoryName}
             </h2>
 
-            {/* Male Table */}
-            <TopFiveSelectionTable
-                title="Male Candidates"
-                candidates={maleCandidates}
-                categories={categories}
-                category={`${categoryName} Male Results`}
-            />
-
             {/* Female Table */}
             <TopFiveSelectionTable
                 title="Female Candidates"
                 candidates={femaleCandidates}
                 categories={categories}
+                judges={judgeOrder}
                 category={`${categoryName} Female Results`}
+            />
+
+            {/* Male Table */}
+            <TopFiveSelectionTable
+                title="Male Candidates"
+                candidates={maleCandidates}
+                categories={categories}
+                judges={judgeOrder}
+                category={`${categoryName} Male Results`}
             />
         </PageLayout>
     );

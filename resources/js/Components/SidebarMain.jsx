@@ -21,13 +21,55 @@ import {
     Star,
     LogOut,
     Trophy,
+    ChevronUp,
+    Users,
 } from "lucide-react";
 
 export default function SidebarMain({ children }) {
     const [open, setOpen] = useState(false);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-    const { props } = usePage();
+    const { props, url } = usePage();
     const user = props.auth?.user; // ✅ get current logged-in user
+
+    // Close the logout menu when the sidebar collapses.
+    useEffect(() => {
+        if (!open) setUserMenuOpen(false);
+    }, [open]);
+
+    // A link is active when its route matches the current page path.
+    const currentPath = url.split("?")[0];
+    const isActive = (routeName) =>
+        route(routeName, undefined, false) === currentPath;
+
+    const renderLinks = (links) =>
+        links.map((link, idx) => {
+            const active = isActive(link.route);
+            const iconElement = React.cloneElement(link.icon, {
+                className: cn(
+                    "h-5 w-5 shrink-0",
+                    active
+                        ? "text-amber-500 dark:text-amber-400"
+                        : "text-neutral-700 dark:text-neutral-200"
+                ),
+            });
+
+            return (
+                <SidebarLink
+                    key={idx}
+                    active={active}
+                    link={{
+                        label: link.label,
+                        icon: iconElement,
+                        href: "#", // href is required but will be handled via onClick
+                        onClick: (e) => {
+                            e.preventDefault();
+                            router.get(route(link.route));
+                        },
+                    }}
+                />
+            );
+        });
 
     useEffect(() => {
         if (user) {
@@ -81,7 +123,7 @@ export default function SidebarMain({ children }) {
                       route: "production_number",
                   },
                   {
-                      label: "Casual Wear",
+                      label: "Sports Wear",
                       icon: <Shirt />,
                       route: "casual_wear",
                   },
@@ -144,8 +186,8 @@ export default function SidebarMain({ children }) {
                 )}
             >
                 <Sidebar open={open} setOpen={setOpen}>
-                    <SidebarBody className="justify-between gap-10">
-                        <div className="flex flex-col overflow-x-hidden overflow-y-auto">
+                    <SidebarBody className="justify-between gap-6">
+                        <div className="flex flex-col min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
                             {/* Logo at the top */}
                             {open ? <Logo /> : <LogoIcon />}
 
@@ -154,34 +196,7 @@ export default function SidebarMain({ children }) {
 
                             {/* Main links */}
                             <div className="mt-2 flex flex-col gap-2">
-                                {mainLinks.map((link, idx) => {
-                                    const iconElement = React.cloneElement(
-                                        link.icon,
-                                        {
-                                            className:
-                                                "h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200",
-                                        }
-                                    );
-
-                                    return (
-                                        <SidebarLink
-                                            key={idx}
-                                            link={{
-                                                label: link.label,
-                                                icon: iconElement,
-                                                href: "#", // href is required but will be handled via onClick
-                                                className:
-                                                    "text-neutral-700 dark:text-neutral-200",
-                                                onClick: (e) => {
-                                                    e.preventDefault();
-                                                    router.get(
-                                                        route(link.route)
-                                                    );
-                                                },
-                                            }}
-                                        />
-                                    );
-                                })}
+                                {renderLinks(mainLinks)}
                             </div>
 
                             {/* Top 5 section header */}
@@ -189,45 +204,63 @@ export default function SidebarMain({ children }) {
 
                             {/* Top 5 links */}
                             <div className="mt-2 flex flex-col gap-2">
-                                {top5Links.map((link, idx) => {
-                                    const iconElement = React.cloneElement(
-                                        link.icon,
-                                        {
-                                            className:
-                                                "h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200",
-                                        }
-                                    );
-
-                                    return (
-                                        <SidebarLink
-                                            key={idx}
-                                            link={{
-                                                label: link.label,
-                                                icon: iconElement,
-                                                href: "#", // required prop
-                                                className:
-                                                    "text-neutral-700 dark:text-neutral-200",
-                                                onClick: (e) => {
-                                                    e.preventDefault();
-                                                    router.get(
-                                                        route(link.route)
-                                                    );
-                                                },
-                                            }}
-                                        />
-                                    );
-                                })}
+                                {renderLinks(top5Links)}
                             </div>
+
+                            {/* Admin-only management links */}
+                            {user?.role === "admin" && (
+                                <>
+                                    <SidebarHeader label="Management" />
+                                    <div className="mt-2 flex flex-col gap-2">
+                                        {renderLinks([
+                                            {
+                                                label: "Judges",
+                                                icon: <Users />,
+                                                route: "admin.judges.index",
+                                            },
+                                        ])}
+                                    </div>
+                                </>
+                            )}
                         </div>
 
-                        <div className="flex flex-col gap-2">
+                        {/* Footer: click the user to show Logout */}
+                        <div className="shrink-0 flex flex-col gap-1 border-t border-neutral-200 dark:border-neutral-700 pt-3">
+                            {userMenuOpen && (
+                                <SidebarLink
+                                    className="text-red-500"
+                                    link={{
+                                        label: "Logout",
+                                        href: "#",
+                                        icon: (
+                                            <LogOut className="h-5 w-5 shrink-0 text-red-500" />
+                                        ),
+                                        onClick: (e) => {
+                                            e.preventDefault();
+                                            router.post("/logout");
+                                        },
+                                    }}
+                                />
+                            )}
                             <SidebarLink
+                                aria-expanded={userMenuOpen}
                                 link={{
-                                    label: `${
-                                        user?.role === "admin"
-                                            ? "Admin"
-                                            : "Judge"
-                                    }: ${user?.name || "User"}`,
+                                    label: (
+                                        <span className="flex items-center gap-2">
+                                            {`${
+                                                user?.role === "admin"
+                                                    ? "Admin"
+                                                    : "Judge"
+                                            }: ${user?.name || "User"}`}
+                                            <ChevronUp
+                                                className={cn(
+                                                    "h-4 w-4 transition-transform",
+                                                    !userMenuOpen &&
+                                                        "rotate-180"
+                                                )}
+                                            />
+                                        </span>
+                                    ),
                                     href: "#",
                                     icon: (
                                         <img
@@ -238,23 +271,10 @@ export default function SidebarMain({ children }) {
                                             alt="Avatar"
                                         />
                                     ),
-                                    className:
-                                        "text-neutral-700 dark:text-neutral-200",
-                                }}
-                            />
-                            <SidebarLink
-                                link={{
-                                    label: "Logout",
-                                    href: "#",
-                                    icon: (
-                                        <LogOut className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
-                                    ),
                                     onClick: (e) => {
                                         e.preventDefault();
-                                        router.post("/logout");
+                                        setUserMenuOpen((o) => !o);
                                     },
-                                    className:
-                                        "text-neutral-700 dark:text-neutral-200",
                                 }}
                             />
                         </div>

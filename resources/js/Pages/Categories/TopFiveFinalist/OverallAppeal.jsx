@@ -7,6 +7,13 @@ import { Tabs } from "@/Components/ui/tabs";
 import CandidateGrid from "./Partials/CandidateGrid";
 import ScoreAlertDialog from "../Partials/ScoreAlertDialog";
 import { toast } from "sonner";
+import {
+    loadDraftScores,
+    saveDraftScores,
+    clearDraftScores,
+} from "@/lib/scoreDrafts";
+
+const DRAFT_CATEGORY = "overall_appeal";
 
 const OverallAppeal = ({ candidates }) => {
     const judgeId = usePage().props.auth.user.id;
@@ -15,7 +22,7 @@ const OverallAppeal = ({ candidates }) => {
     const maleCandidates = candidates.filter((c) => c.gender === "male");
     const femaleCandidates = candidates.filter((c) => c.gender === "female");
 
-    const scoresRef = useRef({}); // store scores keyed by candidate_id
+    const scoresRef = useRef(loadDraftScores(DRAFT_CATEGORY, judgeId)); // store scores keyed by candidate_id
 
     const TabContent = ({ candidates }) => {
         const [_, setRerender] = useState(0);
@@ -23,6 +30,7 @@ const OverallAppeal = ({ candidates }) => {
 
         const handleScoreChange = (candidateId, score) => {
             scoresRef.current[candidateId] = score;
+            saveDraftScores(DRAFT_CATEGORY, judgeId, scoresRef.current);
             setRerender((r) => r + 1);
         };
 
@@ -58,6 +66,11 @@ const OverallAppeal = ({ candidates }) => {
                 },
                 {
                     onSuccess: () => {
+                        clearDraftScores(
+                            DRAFT_CATEGORY,
+                            judgeId,
+                            Object.keys(filteredScores)
+                        );
                         toast.success("Scores submitted successfully!");
                         setSubmitted(true);
                         router.reload();
@@ -94,16 +107,16 @@ const OverallAppeal = ({ candidates }) => {
 
     const tabs = [
         {
-            title: "Male Candidates",
-            value: "male",
-            category: "Male Over-all Appeal / X-Factor",
-            content: <TabContent candidates={maleCandidates} />,
-        },
-        {
             title: "Female Candidates",
             value: "female",
             category: "Female Over-all Appeal / X-Factor",
             content: <TabContent candidates={femaleCandidates} />,
+        },
+        {
+            title: "Male Candidates",
+            value: "male",
+            category: "Male Over-all Appeal / X-Factor",
+            content: <TabContent candidates={maleCandidates} />,
         },
     ];
 

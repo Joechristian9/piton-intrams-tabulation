@@ -16,17 +16,17 @@ class TopFiveCandidateController extends Controller
     {
         $judgeId = Auth::id();
 
+        // One query for all of this judge's scores, instead of one per finalist.
+        $judgeScores = TopFiveScore::where('judge_id', $judgeId)->get()->keyBy('top_five_id');
+
         $candidates = TopFiveCandidates::with('candidate')
             ->get()
             ->sortBy(function ($item) {
                 return $item->candidate->candidate_number ?? 0;
             })
             ->values()
-            ->map(function ($item) use ($judgeId, $categoryField) {
-                // Fetch score via top_five_id
-                $score = TopFiveScore::where('top_five_id', $item->id)
-                    ->where('judge_id', $judgeId)
-                    ->first();
+            ->map(function ($item) use ($judgeScores, $categoryField) {
+                $score = $judgeScores->get($item->id);
 
                 return [
                     'id' => $item->id,

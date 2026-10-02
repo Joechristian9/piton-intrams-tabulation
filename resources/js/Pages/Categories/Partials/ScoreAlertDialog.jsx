@@ -38,7 +38,7 @@ const ScoreAlertDialog = ({
                 </HoverBorderGradient>
             </AlertDialogTrigger>
 
-            <AlertDialogContent className="sm:max-w-lg max-h-[75vh] bg-neutral-900 text-white rounded-lg shadow-lg p-6">
+            <AlertDialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col bg-neutral-900 text-white rounded-lg shadow-lg p-6">
                 <AlertDialogHeader>
                     <AlertDialogTitle>Verify Scores</AlertDialogTitle>
                     <AlertDialogDescription>
@@ -46,9 +46,9 @@ const ScoreAlertDialog = ({
                     </AlertDialogDescription>
                 </AlertDialogHeader>
 
-                <div className="mt-4">
+                <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
                     <table className="w-full text-left border-collapse border border-gray-700">
-                        <thead className="bg-neutral-800 text-white">
+                        <thead className="sticky top-0 z-10 bg-neutral-800 text-white">
                             <tr>
                                 <th className="p-2 border-b border-gray-600">
                                     #

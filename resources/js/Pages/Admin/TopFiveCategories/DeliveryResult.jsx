@@ -17,16 +17,16 @@ const DeliveryResult = ({
             </h2>
 
             <ResultTable
-                title="Male Candidates"
-                candidates={maleCandidates}
-                judgeOrder={judgeOrder}
-                category={`${categoryName} Male Results`}
-            />
-            <ResultTable
                 title="Female Candidates"
                 candidates={femaleCandidates}
                 judgeOrder={judgeOrder}
                 category={`${categoryName} Female Results`}
+            />
+            <ResultTable
+                title="Male Candidates"
+                candidates={maleCandidates}
+                judgeOrder={judgeOrder}
+                category={`${categoryName} Male Results`}
             />
         </PageLayout>
     );

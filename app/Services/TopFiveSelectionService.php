@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\TopFiveSelectionScore;
 use App\Models\Candidate;
+use App\Models\User;
 
 class TopFiveSelectionService
 {
@@ -17,14 +18,14 @@ class TopFiveSelectionService
 
     public function getResultsPerCategory(string $category)
     {
-        $judgeOrder = ['judge_1', 'judge_2', 'judge_3', 'judge_4', 'judge_5'];
+        $judgeOrder = $this->judgeOrder();
 
         // Get all candidates
         $maleCandidatesList = Candidate::where('gender', 'male')->get();
         $femaleCandidatesList = Candidate::where('gender', 'female')->get();
 
         // Load all scores at once
-        $scores = TopFiveSelectionScore::with('judge')->get();
+        $scores = TopFiveSelectionScore::all()->groupBy('candidate_id');
 
         $maleCandidates = $this->processCandidates($maleCandidatesList, $scores, $category, $judgeOrder);
         $femaleCandidates = $this->processCandidates($femaleCandidatesList, $scores, $category, $judgeOrder);
@@ -45,13 +46,13 @@ class TopFiveSelectionService
             $count++;
 
             // Initialize all judges with 0
-            $candidateScores = array_fill_keys($judgeOrder, 0);
+            $candidateScores = array_fill_keys(array_column($judgeOrder, 'id'), 0);
 
             // Fill in scores if they exist
-            $candidateScoresFromDB = $scores->where('candidate_id', $candidate->id);
+            $candidateScoresFromDB = $scores[$candidate->id] ?? collect();
             foreach ($candidateScoresFromDB as $score) {
-                if (in_array($score->judge->name, $judgeOrder)) {
-                    $candidateScores[$score->judge->name] = $score->{$category} ?? 0;
+                if (array_key_exists($score->judge_id, $candidateScores)) {
+                    $candidateScores[$score->judge_id] = $score->{$category} ?? 0;
                 }
             }
 
@@ -74,7 +75,7 @@ class TopFiveSelectionService
         $femaleCandidatesList = Candidate::where('gender', 'female')->get();
 
         // Load all scores at once
-        $scores = TopFiveSelectionScore::with('judge')->get();
+        $scores = TopFiveSelectionScore::all()->groupBy('candidate_id');
 
         $maleCandidates = $this->processTotalPerCategory($maleCandidatesList, $scores);
         $femaleCandidates = $this->processTotalPerCategory($femaleCandidatesList, $scores);
@@ -83,6 +84,7 @@ class TopFiveSelectionService
             'maleCandidates' => $maleCandidates,
             'femaleCandidates' => $femaleCandidates,
             'categories' => $this->categories,
+            'judgeOrder' => $this->judgeOrder(),
         ];
     }
 
@@ -98,7 +100,7 @@ class TopFiveSelectionService
             $categoryTotals = array_fill_keys($this->categories, 0);
 
             // Sum all judges' scores per category
-            $candidateScores = $scores->where('candidate_id', $candidate->id);
+            $candidateScores = $scores[$candidate->id] ?? collect();
             foreach ($candidateScores as $score) {
                 foreach ($this->categories as $cat) {
                     $categoryTotals[$cat] += $score->{$cat} ?? 0;
@@ -135,5 +137,18 @@ class TopFiveSelectionService
         }
 
         return $candidates;
+    }
+
+    /**
+     * All judges in a stable order; scores are keyed by judge id so renamed
+     * or newly added judges still line up with their scores.
+     */
+    private function judgeOrder(): array
+    {
+        return User::where('role', 'judge')
+            ->orderBy('id')
+            ->get(['id', 'name'])
+            ->map(fn ($judge) => ['id' => $judge->id, 'name' => $judge->name])
+            ->all();
     }
 }

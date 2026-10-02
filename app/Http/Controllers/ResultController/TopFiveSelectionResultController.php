@@ -4,12 +4,18 @@ namespace App\Http\Controllers\ResultController;
 
 use App\Http\Controllers\Controller;
 use App\Services\TopFiveSelectionService;
+use App\Models\Candidate;
 use App\Models\TopFiveCandidates;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class TopFiveSelectionResultController extends Controller
 {
+    /** Finalists per gender. */
+    private const FINALIST_COUNT = 3;
+
     protected $service;
 
     public function __construct(TopFiveSelectionService $service)
@@ -37,7 +43,7 @@ class TopFiveSelectionResultController extends Controller
             'maleCandidates' => $results['maleCandidates'],
             'femaleCandidates' => $results['femaleCandidates'],
             'judgeOrder' => $results['judgeOrder'],
-            'categoryName' => 'Casual Wear',
+            'categoryName' => 'Sports Wear',
         ]);
     }
 
@@ -83,6 +89,7 @@ class TopFiveSelectionResultController extends Controller
             'maleCandidates' => $results['maleCandidates'],
             'femaleCandidates' => $results['femaleCandidates'],
             'categories' => $results['categories'],
+            'judgeOrder' => $results['judgeOrder'],
             'categoryName' => 'Top Three Selection',
         ]);
     }
@@ -90,18 +97,30 @@ class TopFiveSelectionResultController extends Controller
     public function setTopFive(Request $request)
     {
         $request->validate([
-            'candidate_ids' => 'required|array|min:1',
-            'candidate_ids.*' => 'exists:candidates,id',
+            'candidate_ids' => 'required|array',
+            'candidate_ids.*' => 'distinct|exists:candidates,id',
         ]);
 
-        TopFiveCandidates::query()->delete();
+        $ids = $request->candidate_ids;
+        $perGender = Candidate::whereIn('id', $ids)->pluck('gender')->countBy();
 
-        foreach ($request->candidate_ids as $candidateId) {
-            TopFiveCandidates::create([
-                'candidate_id' => $candidateId,
+        if (($perGender['male'] ?? 0) !== self::FINALIST_COUNT || ($perGender['female'] ?? 0) !== self::FINALIST_COUNT) {
+            throw ValidationException::withMessages([
+                'candidate_ids' => 'Select exactly ' . self::FINALIST_COUNT . ' male and ' . self::FINALIST_COUNT . ' female finalists.',
             ]);
         }
 
-        return redirect()->back()->with('success', 'Top 5 Male & Female saved successfully!');
+        // Only remove finalists who dropped out, so finals scores already
+        // given to candidates who stay in are kept.
+        DB::transaction(function () use ($ids) {
+            TopFiveCandidates::whereNotIn('candidate_id', $ids)->delete();
+
+            $existing = TopFiveCandidates::pluck('candidate_id')->all();
+            foreach (array_diff($ids, $existing) as $candidateId) {
+                TopFiveCandidates::create(['candidate_id' => $candidateId]);
+            }
+        });
+
+        return redirect()->back()->with('success', 'Top 3 Male & Female saved successfully!');
     }
 }
