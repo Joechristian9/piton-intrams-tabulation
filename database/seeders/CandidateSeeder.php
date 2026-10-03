@@ -10,31 +10,34 @@ class CandidateSeeder extends Seeder
     public function run(): void
     {
         $femaleCandidates = [
-            ['Elsie', 'Valdez', 'Bachelor of Technical and Vocational Education'],
-            ['Nicole Kim', 'Paguirigan', 'Bachelor of Secondary Education'],
-            ['Andrea Leigh', 'Fernandez', 'Bachelor of Science in Psychology'],
-            ['Kenneth Clier', 'Bunagan', 'Bachelor of Science in Nursing'],
-            ['Ma. Kathleen Joyce', 'Cabanlong', 'Bachelor of Science in Civil Engineering'],
+            ['Trixie Anne', 'Datul', 'Bachelor of Technology and Livelihood Education'],
+            ['Jelly Mae', 'Panangui', 'Bachelor of Technical-Vocational Teacher Education'],
+            ['Cieryl Feiye', 'Azul', 'Bachelor of Science in Civil Engineering'],
+            ['Donnamie', 'Bernardo', 'Bachelor of Science in Nursing'],
             ['Simran', 'Lola', 'Bachelor of Science in Information Technology'],
-            ['Sharah Mayne', 'Mendieta', 'Bachelor of Science in Industrial Technology'],
-            ['Monique Laurose', 'Evangelista', 'Bachelor of Science in Architecture'],
-            ['Ashleigh Zea', 'Bartolome', 'Bachelor of Physical Education'],
-            ['Precious Nhickole', 'Zipagan', 'Bachelor of Science in Electrical Engineering'],
-            ['Gracielle', 'Perez', 'Bachelor of Science in Midwifery'],
+
+            ['Ma. Theresa', 'Cabasal', 'Bachelor of Science in Electrical Engineering'],
+            ['Ericka Mae', 'Aguinaldo', 'Bachelor of Science in Psychology'],
+            ['Aisly', 'Salvador', 'Bachelor of Physical Education'],
+            ['Iloissa', 'Manuel', 'Bachelor of Science in Architecture'],
+            ['Jarmie', 'Nedia', 'Bachelor of Science in Industrial Technology'],
+
+            ['Hanzel', 'Raquel', 'Bachelor of Science in Midwifery'],
+            ['Kieshamea', 'Paqueño', 'Bachelor of Secondary Education']
         ];
 
         $maleCandidates = [
-            ['JunJun', 'Cabansag', 'Bachelor of Technical and Vocational Education'],
-            ['Rayndel Deive', 'Respicio', 'Bachelor of Secondary Education'],
-            ['Smile', 'Aroc', 'Bachelor of Science in Psychology'],
-            ['Jojeath', 'Queturas', 'Bachelor of Science in Nursing'],
-            ['Jaiden Paul', 'Orteza', 'Bachelor of Science in Civil Engineering'],
-            ['Justin Elijah', 'Tumolva', 'Bachelor of Science in Information Technology'],
-            ['Gerome', 'De Guzman', 'Bachelor of Science in Industrial Technology'],
-            ['Prince John', 'Agcaoili', 'Bachelor of Science in Architecture'],
-            ['Jairus', 'Alvarez', 'Bachelor of Physical Education'],
-            ['Jenkins', 'Delos Reyes', 'Bachelor of Science in Electrical Engineering'],
-            ['John Carlo', 'Mendoza', 'Bachelor of Technology and Livelihood Education'],
+            ['Narciso', 'Cabalonga', 'Bachelor of Technology and Livelihood Education'],
+            ['Jon-lei', 'Tagao', 'Bachelor of Technical-Vocational Teacher Education'],
+            ['Muhammad', 'Brohi', 'Bachelor of Science in Civil Engineering'],
+            ['Justine Paul', 'Garcia', 'Bachelor of Science in Nursing'],
+            ['Reynaldo', 'Pascua Jr.', 'Bachelor of Science in Information Technology'],
+
+            ['John Vincent', 'Juaton', 'Bachelor of Science in Electrical Engineering'],
+            ['Lorenz Jamuel', 'Gamboa', 'Bachelor of Science in Psychology'],
+            ['Luke', 'Dumlao', 'Bachelor of Physical Education'],
+            ['Christopher', 'Catembung', 'Bachelor of Science in Architecture'],
+            ['Jep', 'Lapuebla', 'Bachelor of Science in Industrial Technology']
         ];
 
         // Female candidates with numbered images and candidate_number
@@ -44,7 +47,7 @@ class CandidateSeeder extends Seeder
                 'last_name'       => $candidate[1],
                 'gender'          => 'female',
                 'course'          => $candidate[2],
-                'profile_img'     => "candidates/female/" . ($index + 1) . ".jpg",
+                'profile_img'     => "candidates/female/" . ($index + 1) . ".JPEG",
                 'candidate_number' => $index + 1,
             ]);
         }
@@ -56,7 +59,7 @@ class CandidateSeeder extends Seeder
                 'last_name'       => $candidate[1],
                 'gender'          => 'male',
                 'course'          => $candidate[2],
-                'profile_img'     => "candidates/male/" . ($index + 1) . ".jpg",
+                'profile_img'     => "candidates/male/" . ($index + 1) . ".JPEG",
                 'candidate_number' => $index + 1,
             ]);
         }

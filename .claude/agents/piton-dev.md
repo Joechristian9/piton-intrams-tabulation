@@ -120,7 +120,7 @@ Top 3 finalists, and print signed result sheets.
 - Layout: `Layouts/PageLayout.jsx` + `Components/SidebarMain.jsx` (active-link indicator,
   click-to-reveal logout, sets the tab title from the active link). Landing page:
   `Pages/Welcome.jsx` — keep it general and minimal (logo, title, org name, tagline, one
-  login CTA, footer "© year joe-dev").
+  login CTA, footer "© year Darryl Tamayo & Andrei Sam Pambid").
 - Login and other account pages: `Layouts/GuestLayout.jsx` is a dark PITON shell (adds the
   `dark` class, so `TextInput`/`InputLabel`/`Checkbox`/`InputError`/`PrimaryButton` switch to
   their `dark:` styles). `Pages/Auth/Login.jsx` has visible labels, show/hide password,
