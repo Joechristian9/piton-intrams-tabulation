@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CandidateController;
 use App\Http\Controllers\JudgeController;
 use App\Http\Controllers\JudgeNotificationController;
+use App\Http\Controllers\Admin\ResultsController;
 use App\Http\Controllers\Judge\HomeController;
 use App\Http\Controllers\Judge\ScoringController;
 use App\Http\Controllers\ScoreSubmissionController;
@@ -117,6 +118,13 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
         ->name('admin.notify_judges');
     Route::post('/admin/notify-judges', [JudgeNotificationController::class, 'store'])
         ->name('admin.notify_judges.send');
+});
+
+// Multi-event admin results (admins only)
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin/events/{event}')->group(function () {
+    Route::get('/results/categories/{category}', [ResultsController::class, 'category'])->name('admin.results.category');
+    Route::get('/results/round1', [ResultsController::class, 'round1'])->name('admin.results.round1');
+    Route::get('/results/standings', [ResultsController::class, 'standings'])->name('admin.results.standings');
 });
 
 // Multi-event judge scoring: one page per category of the judge's own event

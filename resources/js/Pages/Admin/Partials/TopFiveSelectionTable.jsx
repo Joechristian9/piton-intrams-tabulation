@@ -31,14 +31,28 @@ const CATEGORY_MAX = {
     overall_appeal: 10,
 };
 
+// Categories come as objects {id, name, max_score} from multi-event pages, or as
+// the old column keys from the single-pageant pages (removed later).
+const columnOf = (cat) =>
+    typeof cat === "object"
+        ? { key: cat.id, label: cat.name, max: Number(cat.max_score) }
+        : {
+              key: cat,
+              label: CATEGORY_LABELS[cat] ?? cat.replaceAll("_", " "),
+              max: CATEGORY_MAX[cat],
+          };
+
 const TopFiveSelectionTable = ({
     title,
     candidates,
     categories,
     category,
     judges = [],
+    highlight = 3,
 }) => {
     const tableRef = React.useRef();
+    const columns = categories.map(columnOf);
+    const totalMax = columns.reduce((sum, c) => sum + (c.max ?? 0), 0);
 
     return (
         <div className="p-4 mb-8">
@@ -63,15 +77,12 @@ const TopFiveSelectionTable = ({
                         <TableRow>
                             <TableHead>#</TableHead>
                             <TableHead>Candidate</TableHead>
-                            {categories.map((cat) => (
-                                <TableHead key={cat} className="text-center">
-                                    {(
-                                        CATEGORY_LABELS[cat] ??
-                                        cat.replaceAll("_", " ")
-                                    ).toUpperCase()}
-                                    {CATEGORY_MAX[cat] && (
+                            {columns.map((col) => (
+                                <TableHead key={col.key} className="text-center">
+                                    {col.label.toUpperCase()}
+                                    {col.max > 0 && (
                                         <span className="block text-xs font-normal opacity-70">
-                                            out of {CATEGORY_MAX[cat]}
+                                            out of {col.max}
                                         </span>
                                     )}
                                 </TableHead>
@@ -79,7 +90,7 @@ const TopFiveSelectionTable = ({
                             <TableHead className="text-center">
                                 Total
                                 <span className="block text-xs font-normal opacity-70">
-                                    out of 100
+                                    out of {totalMax}
                                 </span>
                             </TableHead>
                             <TableHead className="text-center"> Rank</TableHead>
@@ -90,7 +101,7 @@ const TopFiveSelectionTable = ({
                             <TableRow
                                 key={c.candidate.id}
                                 className={
-                                    c.rank <= 3
+                                    c.rank <= highlight
                                         ? "bg-yellow-600 text-black font-bold hover:bg-yellow-500"
                                         : ""
                                 }
@@ -114,12 +125,12 @@ const TopFiveSelectionTable = ({
                                         </span>
                                     </div>
                                 </TableCell>
-                                {categories.map((cat) => (
+                                {columns.map((col) => (
                                     <TableCell
-                                        key={cat}
+                                        key={col.key}
                                         className="text-center"
                                     >
-                                        {Number(c.scores[cat] ?? 0).toFixed(2)}
+                                        {Number(c.scores[col.key] ?? 0).toFixed(2)}
                                     </TableCell>
                                 ))}
                                 <TableCell className="text-center">

@@ -266,10 +266,39 @@ export default function SidebarMain({ children }) {
 
                             {useServerNav ? (
                                 <>
-                                    {nav.event && open && (
+                                    {nav.event && open && !nav.events && (
                                         <p className="mt-4 truncate px-1 text-sm font-semibold text-yellow-400">
                                             {nav.event.name}
                                         </p>
+                                    )}
+                                    {/* Admins pick which event the result pages show. */}
+                                    {nav.events && open && (
+                                        <label className="mt-4 block px-1">
+                                            <span className="text-xs font-medium uppercase tracking-wider text-neutral-400">
+                                                Event
+                                            </span>
+                                            <select
+                                                value={nav.event.id}
+                                                onChange={(e) => {
+                                                    const picked = nav.events.find(
+                                                        (ev) => ev.id === Number(e.target.value)
+                                                    );
+                                                    router.get(
+                                                        picked.rounds === 2
+                                                            ? route("admin.results.round1", picked.id)
+                                                            : route("admin.results.standings", picked.id)
+                                                    );
+                                                }}
+                                                className="mt-1 block min-h-11 w-full rounded-lg border-neutral-600 bg-neutral-900 text-sm font-semibold text-yellow-400 focus:border-yellow-400 focus:ring-yellow-400"
+                                            >
+                                                {nav.events.map((ev) => (
+                                                    <option key={ev.id} value={ev.id}>
+                                                        {ev.name}
+                                                        {ev.status === "live" ? " (live)" : ""}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </label>
                                     )}
                                     {nav.sections.map((section) => (
                                         <React.Fragment key={section.label}>

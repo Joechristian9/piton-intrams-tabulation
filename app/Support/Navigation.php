@@ -18,7 +18,45 @@ class Navigation
             return self::judge($user->event);
         }
 
+        if ($user?->role === 'admin' && $adminEvent) {
+            return self::admin($adminEvent);
+        }
+
         return ['event' => null, 'sections' => []];
+    }
+
+    private static function admin(Event $event): array
+    {
+        $n = $event->finalists_per_group;
+        $resultItems = fn (int $round) => $event->categories->where('round', $round)->values()->map(fn ($category) => [
+            'label' => $category->name,
+            'href' => route('admin.results.category', [$event, $category], false),
+            'icon' => 'category',
+        ])->all();
+        $standings = ['label' => 'Final Standings', 'href' => route('admin.results.standings', $event, false), 'icon' => 'trophy'];
+
+        $sections = $event->rounds === 1
+            ? [['label' => 'Categories', 'items' => [...$resultItems(1), $standings]]]
+            : [
+                ['label' => "Top {$n} Selection", 'items' => [
+                    ...$resultItems(1),
+                    ['label' => "Top {$n} Selection Results", 'href' => route('admin.results.round1', $event, false), 'icon' => 'trophy'],
+                ]],
+                ['label' => "Top {$n} Finalist", 'items' => [...$resultItems(2), $standings]],
+            ];
+
+        // The old single-pageant management pages, until per-event ones replace them.
+        $sections[] = ['label' => 'Management', 'items' => [
+            ['label' => 'Judges', 'href' => route('admin.judges.index', [], false), 'icon' => 'users'],
+            ['label' => 'Notify Judges', 'href' => route('admin.notify_judges', [], false), 'icon' => 'bell'],
+        ]];
+
+        return [
+            'event' => ['id' => $event->id, 'name' => $event->name, 'status' => $event->status],
+            'events' => Event::orderBy('id')->get(['id', 'name', 'status', 'rounds'])
+                ->map(fn ($e) => ['id' => $e->id, 'name' => $e->name, 'status' => $e->status, 'rounds' => $e->rounds])->all(),
+            'sections' => $sections,
+        ];
     }
 
     private static function judge(Event $event): array

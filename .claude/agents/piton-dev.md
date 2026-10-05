@@ -208,6 +208,12 @@ Top 3 finalists, and print signed result sheets.
   judge via one upsert; rejects when the event isn't live ("This event isn't running right
   now."), when Round 1 is locked, or when a candidate isn't in the round (round 2 = finalists).
   Bumps the event's `scores` stamp and pushes the per-event submission feed.
+- Admin results: `Admin\ResultsController` under `/admin/events/{event}/results/...`
+  (`admin.results.category|round1|standings`, `admin` middleware — judges get 403). Pages
+  `Admin/Results/{Category,Round,Standings}.jsx`; standings show weighted columns in
+  carry-over mode. `App\Support\AdminEventContext` picks the admin's event (URL → session →
+  latest started live → newest); the sidebar has an event picker (`nav.events`).
+  `Navigation` builds the admin sections; shared `live` uses the admin's event.
 - Routes are cached too: clear them (`php artisan route:clear`) before tests after route
   changes, then `php artisan optimize` when done.
 - `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):
