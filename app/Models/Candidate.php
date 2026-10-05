@@ -11,6 +11,8 @@ class Candidate extends Model
     use HasFactory;
 
     protected $fillable = [
+        'event_id',
+        'group_id',
         'profile_img',
         'candidate_number',
         'first_name',
@@ -18,6 +20,16 @@ class Candidate extends Model
         'gender',
         'course',
     ];
+
+    public function event()
+    {
+        return $this->belongsTo(Event::class);
+    }
+
+    public function group()
+    {
+        return $this->belongsTo(EventGroup::class, 'group_id');
+    }
 
     public function topFiveScores()
     {
