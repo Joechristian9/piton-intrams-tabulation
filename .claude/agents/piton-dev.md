@@ -198,6 +198,11 @@ Top 3 finalists, and print signed result sheets.
   the stored copy (`Auth\PasswordController`).
 - Login: field `login` ("Username or email"); `LoginRequest` uses `email` when it contains
   `@`, otherwise `username`; errors and throttling are keyed on `login`.
+- Old tables (`top_five_*`, `candidates.gender`) are dropped by
+  `database/migrations/pending/2026_10_20_000001_drop_legacy_score_tables.php`, which plain
+  `migrate` never runs. Only with the user's go-ahead, between events: `php artisan db:backup`,
+  then `php artisan migrate --path=database/migrations/pending`. After that,
+  `events:migrate-legacy` can't run (it needs the old tables).
 - Routes are cached too: clear them (`php artisan route:clear`) before tests after route
   changes, then `php artisan optimize` when done.
 - `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):
