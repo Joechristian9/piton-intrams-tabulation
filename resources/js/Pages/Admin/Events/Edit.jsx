@@ -7,15 +7,17 @@ import Settings from "./Tabs/Settings";
 import Groups from "./Tabs/Groups";
 import Categories from "./Tabs/Categories";
 import Candidates from "./Tabs/Candidates";
+import Judges from "./Tabs/Judges";
 import usePasswordAction from "./usePasswordAction";
 import { STATUS_STYLES } from "./Index";
 
-// Tabs added as each part of event setup exists.
+// Event setup tabs.
 const TABS = [
     ["settings", "Settings"],
     ["groups", "Groups"],
     ["categories", "Categories"],
     ["candidates", "Candidates"],
+    ["judges", "Judges"],
 ];
 
 const readTab = () => {
@@ -110,6 +112,7 @@ export default function Edit(props) {
                     {tab === "groups" && <Groups event={event} groups={props.groups} />}
                     {tab === "categories" && <Categories event={event} categories={props.categories} locks={locks} />}
                     {tab === "candidates" && <Candidates event={event} groups={props.groups} candidates={props.candidates} />}
+                    {tab === "judges" && <Judges event={event} judges={props.judges} />}
                 </div>
             </div>
 

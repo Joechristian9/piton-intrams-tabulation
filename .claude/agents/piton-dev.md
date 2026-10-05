@@ -245,6 +245,14 @@ Top 3 finalists, and print signed result sheets.
   upload files but never touches `public/candidates/`. Scored candidates can't be deleted or
   regrouped. `CandidatePhoto.jsx` maps both path styles to their WebPs. Tests use real image
   fixtures in `tests/fixtures/` (this PHP has no WebP support to fake them).
+- Judges per event: `App\Support\JudgeAccounts` (`create($event, $count)` → "Judge n",
+  `{code}-judge{n}` numbering on from the highest existing, email `{username}@judges.local`,
+  8-char password from `ALPHABET`, encrypted copy in `password_plain_encrypted` for
+  reveal/reprint; `resetPassword`, `revealPassword`). `Admin\EventJudgeController`
+  (`admin.event-judges.store|update|reset|destroy|slips`; delete needs password and no scores).
+  Judges tab + `Pages/Admin/Events/JudgeSlips.jsx` (printable). The old global Judges page,
+  `JudgeController` and their tests are gone. A judge changing their own password clears
+  the stored copy (`Auth\PasswordController`).
 - Routes are cached too: clear them (`php artisan route:clear`) before tests after route
   changes, then `php artisan optimize` when done.
 - `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):

@@ -203,11 +203,6 @@ export default function SidebarMain({ children }) {
                       route: "admin.events.index",
                   },
                   {
-                      label: "Judges",
-                      icon: <Users />,
-                      route: "admin.judges.index",
-                  },
-                  {
                       label: "Notify Judges",
                       icon: <BellRing />,
                       route: "admin.notify_judges",

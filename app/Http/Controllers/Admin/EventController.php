@@ -63,6 +63,7 @@ class EventController extends Controller
             ]),
             'candidates' => $event->candidates()->orderBy('group_id')->orderBy('candidate_number')->get()
                 ->map(fn ($c) => [...EventResults::candidatePayload($c), 'group_id' => $c->group_id, 'hasScores' => EventLocks::candidateHasScores($c)]),
+            'judges' => EventJudgeController::judgeRows($event),
             'locks' => [
                 'hasScores' => EventLocks::hasScores($event),
                 'roundHasScores' => [1 => EventLocks::roundHasScores($event, 1), 2 => EventLocks::roundHasScores($event, 2)],

@@ -43,6 +43,12 @@ class User extends Authenticatable
         return $this->belongsTo(Event::class);
     }
 
+    /** Scores this judge gave. */
+    public function scores()
+    {
+        return $this->hasMany(Score::class, 'judge_id');
+    }
+
     /**
      * Get the attributes that should be cast.
      *
