@@ -198,6 +198,11 @@ export default function SidebarMain({ children }) {
         user?.role === "admin"
             ? [
                   {
+                      label: "Events",
+                      icon: <CalendarDays />,
+                      route: "admin.events.index",
+                  },
+                  {
                       label: "Judges",
                       icon: <Users />,
                       route: "admin.judges.index",

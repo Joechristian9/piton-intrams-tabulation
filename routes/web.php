@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CandidateController;
 use App\Http\Controllers\JudgeController;
 use App\Http\Controllers\JudgeNotificationController;
+use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\FinalistController;
 use App\Http\Controllers\Admin\NotifyController;
 use App\Http\Controllers\Admin\ScoreSubmissionController as AdminScoreSubmissionController;
@@ -121,6 +122,18 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
         ->name('admin.notify_judges');
     Route::post('/admin/notify-judges', [JudgeNotificationController::class, 'store'])
         ->name('admin.notify_judges.send');
+});
+
+// Multi-event management (admins only)
+Route::middleware(['auth', 'verified', 'admin'])->group(function () {
+    Route::get('/admin/events', [EventController::class, 'index'])->name('admin.events.index');
+    Route::post('/admin/events', [EventController::class, 'store'])->name('admin.events.store');
+    Route::get('/admin/events/{event}/edit', [EventController::class, 'edit'])->name('admin.events.edit');
+    Route::put('/admin/events/{event}', [EventController::class, 'update'])->name('admin.events.update');
+    Route::delete('/admin/events/{event}', [EventController::class, 'destroy'])->name('admin.events.destroy');
+    Route::post('/admin/events/{event}/start', [EventController::class, 'start'])->name('admin.events.start');
+    Route::post('/admin/events/{event}/close', [EventController::class, 'close'])->name('admin.events.close');
+    Route::post('/admin/events/{event}/duplicate', [EventController::class, 'duplicate'])->name('admin.events.duplicate');
 });
 
 // Multi-event admin results (admins only)

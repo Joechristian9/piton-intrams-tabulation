@@ -47,6 +47,7 @@ class Navigation
 
         // Judges: the old single-pageant page until per-event judges replace it.
         $sections[] = ['label' => 'Management', 'items' => [
+            ['label' => 'Events', 'href' => route('admin.events.index', [], false), 'icon' => 'events'],
             ['label' => 'Judges', 'href' => route('admin.judges.index', [], false), 'icon' => 'users'],
             ['label' => 'Notify Judges', 'href' => route('admin.notify', $event, false), 'icon' => 'bell'],
         ]];

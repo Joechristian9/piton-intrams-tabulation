@@ -115,6 +115,8 @@ class AdminResultsTest extends TestCase
         $this->assertSame(route('admin.results.round1', $event, false), $nav['sections'][0]['items'][1]['href']);
         $this->assertSame(['Delivery', 'Final Standings'], array_column($nav['sections'][1]['items'], 'label'));
         $this->assertSame([$event->id, $other->id], array_column($nav['events'], 'id'));
+        $this->assertSame('Events', $nav['sections'][2]['items'][0]['label']);
+        $this->assertSame(route('admin.events.index', [], false), $nav['sections'][2]['items'][0]['href']);
     }
 
     public function test_single_round_admin_nav(): void

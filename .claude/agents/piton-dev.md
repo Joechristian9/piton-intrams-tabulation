@@ -226,6 +226,13 @@ Top 3 finalists, and print signed result sheets.
   `category_id`, the banner links via `route('score.show', id)`). Admin toasts poll
   `admin.events.score_submissions` for the event in `nav.event`. The `*Legacy` feed methods
   serve the old pages until they're removed.
+- Events: `Admin\EventController` (`admin.events.index|store|edit|update|destroy|start|close|duplicate`).
+  Several events can be live. Start/Close/Delete need the admin password
+  (`Components/PasswordConfirmDialog.jsx` + `Pages/Admin/Events/usePasswordAction.js`). Start
+  needs judges, groups and categories for every round. Locks (`App\Support\EventLocks`):
+  rounds/finals settings once scored, Top N once finalists set, code once judges exist; delete
+  only without scores. Duplicate copies settings, groups and categories. Uploaded photos use
+  the `uploads` disk (`public/uploads`, no storage:link).
 - Routes are cached too: clear them (`php artisan route:clear`) before tests after route
   changes, then `php artisan optimize` when done.
 - `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):
