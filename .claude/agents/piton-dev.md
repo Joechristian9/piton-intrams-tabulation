@@ -238,6 +238,13 @@ Top 3 finalists, and print signed result sheets.
   0.01–999.99; a scored category keeps its max/round and can't be deleted; a round with scores
   takes no new categories). Setup tabs `Pages/Admin/Events/Tabs/{Groups,Categories}.jsx` use
   `Tabs/request.js` (`send(method, url, data, toast, then)` — chain dependent requests).
+- Candidates: `Admin\CandidateController` (`admin.candidates.*`; update is PUT via POST +
+  `_method` for multipart). Numbers unique per group; photo = `photo` (JPEG ≤ 5 MB) +
+  `photo_card` (WebP ≤ 1 MB) + `photo_thumb` (WebP ≤ 200 KB), required together, stored as
+  `uploads/candidates/{event}/{uuid}.jpg|.webp|-thumb.webp`; replacing/deleting removes old
+  upload files but never touches `public/candidates/`. Scored candidates can't be deleted or
+  regrouped. `CandidatePhoto.jsx` maps both path styles to their WebPs. Tests use real image
+  fixtures in `tests/fixtures/` (this PHP has no WebP support to fake them).
 - Routes are cached too: clear them (`php artisan route:clear`) before tests after route
   changes, then `php artisan optimize` when done.
 - `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):

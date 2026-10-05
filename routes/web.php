@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CandidateController;
 use App\Http\Controllers\JudgeController;
 use App\Http\Controllers\JudgeNotificationController;
+use App\Http\Controllers\Admin\CandidateController as AdminCandidateController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\GroupController;
@@ -140,6 +141,11 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::post('/admin/events/{event}/groups', [GroupController::class, 'store'])->name('admin.groups.store');
     Route::put('/admin/groups/{group}', [GroupController::class, 'update'])->name('admin.groups.update');
     Route::delete('/admin/groups/{group}', [GroupController::class, 'destroy'])->name('admin.groups.destroy');
+
+    Route::post('/admin/events/{event}/candidates', [AdminCandidateController::class, 'store'])->name('admin.candidates.store');
+    // POST with _method=PUT: photo uploads need multipart form data.
+    Route::put('/admin/candidates/{candidate}', [AdminCandidateController::class, 'update'])->name('admin.candidates.update');
+    Route::delete('/admin/candidates/{candidate}', [AdminCandidateController::class, 'destroy'])->name('admin.candidates.destroy');
 
     Route::post('/admin/events/{event}/categories', [AdminCategoryController::class, 'store'])->name('admin.categories.store');
     Route::put('/admin/categories/{category}', [AdminCategoryController::class, 'update'])->name('admin.categories.update');
