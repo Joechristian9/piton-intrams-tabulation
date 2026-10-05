@@ -124,6 +124,29 @@ class CandidatesTest extends TestCase
         $this->assertNotSame("uploads/{$old}.jpg", $candidate->fresh()->profile_img);
     }
 
+    public function test_a_failed_update_keeps_the_old_photo_and_leaves_no_new_files(): void
+    {
+        $this->create();
+        $candidate = Candidate::sole();
+        $old = substr($candidate->profile_img, strlen('uploads/'), -4);
+        Candidate::updating(fn () => throw new \RuntimeException('database hiccup'));
+
+        $this->actingAs($this->admin)->post(route('admin.candidates.update', $candidate), ['_method' => 'PUT', ...$this->fields(), ...$this->photos()])
+            ->assertStatus(500);
+
+        Storage::disk('uploads')->assertExists(["{$old}.jpg", "{$old}.webp", "{$old}-thumb.webp"]);
+        $this->assertCount(3, Storage::disk('uploads')->allFiles());
+    }
+
+    public function test_a_failed_create_leaves_no_files(): void
+    {
+        Candidate::creating(fn () => throw new \RuntimeException('database hiccup'));
+
+        $this->create()->assertStatus(500);
+
+        $this->assertSame([], Storage::disk('uploads')->allFiles());
+    }
+
     public function test_scored_candidate_cannot_be_deleted_or_regrouped(): void
     {
         $candidate = $this->addCandidate($this->event, 'Female', 1);

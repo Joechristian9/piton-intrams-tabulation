@@ -43,10 +43,11 @@ class LegacyImporter
         }
 
         foreach ($groups as $gender => $groupId) {
-            DB::table('candidates')->where('gender', $gender)->update(['event_id' => $event->id, 'group_id' => $groupId]);
+            // Only the old pageant's candidates: other events' candidates already have an event.
+            DB::table('candidates')->whereNull('event_id')->where('gender', $gender)->update(['event_id' => $event->id, 'group_id' => $groupId]);
         }
 
-        DB::table('users')->where('role', 'judge')->orderBy('id')->pluck('id')
+        DB::table('users')->where('role', 'judge')->whereNull('event_id')->orderBy('id')->pluck('id')
             ->each(fn ($id, $i) => DB::table('users')->where('id', $id)->update([
                 'event_id' => $event->id,
                 'username' => 'piton-judge' . ($i + 1),

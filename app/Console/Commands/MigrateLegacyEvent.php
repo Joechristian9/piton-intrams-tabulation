@@ -24,8 +24,18 @@ class MigrateLegacyEvent extends Command
 
     public function handle(LegacyImporter $importer): int
     {
-        if (Event::exists()) {
-            $this->error('Event #1 already exists. Nothing was changed.');
+        // Other events may already exist (created in the admin); only the old pageant's
+        // own event blocks a second run.
+        if (Event::where('code', 'piton')->exists()) {
+            $this->error('The old pageant was already migrated (an event with code "piton" exists). Nothing was changed.');
+
+            return self::FAILURE;
+        }
+
+        $duplicates = $this->duplicateScoreRows();
+        if ($duplicates > 0) {
+            $this->error("The old tables have {$duplicates} duplicate score rows (the same judge twice for one candidate). "
+                . 'Remove the extra rows (after a backup) and run this again. Nothing was changed.');
 
             return self::FAILURE;
         }
@@ -89,10 +99,28 @@ class MigrateLegacyEvent extends Command
         foreach (['top_five_selection_scores', 'top_five_scores'] as $table) {
             $count += DB::table($table)
                 ->leftJoin('users', 'users.id', '=', "{$table}.judge_id")
-                ->where(fn ($q) => $q->whereNull('users.id')->orWhere('users.role', '!=', 'judge'))
+                ->where(fn ($q) => $q->whereNull('users.id')
+                    ->orWhere('users.role', '!=', 'judge')
+                    ->orWhereNotNull('users.event_id'))
                 ->count();
         }
 
         return $count;
+    }
+
+    /** Extra rows for the same (candidate or finalist, judge) pair in the old tables. */
+    private function duplicateScoreRows(): int
+    {
+        $count = 0;
+        foreach (['top_five_selection_scores' => 'candidate_id', 'top_five_scores' => 'top_five_id'] as $table => $key) {
+            $count += DB::table($table)
+                ->selectRaw("{$key}, judge_id, COUNT(*) - 1 as extra")
+                ->groupBy($key, 'judge_id')
+                ->havingRaw('COUNT(*) > 1')
+                ->get()
+                ->sum('extra');
+        }
+
+        return (int) $count;
     }
 }

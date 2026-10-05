@@ -31,10 +31,13 @@ class LegacyResults
      */
     public static function snapshot(): array
     {
-        $judgeIds = DB::table('users')->where('role', 'judge')->orderBy('id')->pluck('id')->map(fn ($id) => (int) $id)->all();
+        // The old pageant's judges and candidates are the ones not yet in any event
+        // (judges/candidates of events created in the admin are ignored). Before any
+        // event exists that is everyone, exactly as the old services saw it.
+        $judgeIds = DB::table('users')->where('role', 'judge')->whereNull('event_id')->orderBy('id')->pluck('id')->map(fn ($id) => (int) $id)->all();
 
         // Candidates by id, grouped by gender (Candidate::all()->groupBy('gender')).
-        $candidates = DB::table('candidates')->orderBy('id')->get(['id', 'gender']);
+        $candidates = DB::table('candidates')->whereNull('event_id')->orderBy('id')->get(['id', 'gender']);
         $selectionPopulation = [
             'female' => $candidates->where('gender', 'female')->map(fn ($c) => ['id' => (int) $c->id, 'key' => (int) $c->id])->values()->all(),
             'male' => $candidates->where('gender', 'male')->map(fn ($c) => ['id' => (int) $c->id, 'key' => (int) $c->id])->values()->all(),

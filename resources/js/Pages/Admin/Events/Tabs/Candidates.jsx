@@ -92,8 +92,8 @@ function CandidateForm({ event, groups, candidate, onClose }) {
                     </label>
                     <input id="cand-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={pickPhoto} className="mt-1 block w-full text-sm text-gray-300 file:mr-3 file:min-h-11 file:rounded-lg file:border-0 file:bg-neutral-700 file:px-4 file:text-white" />
                     <p className="mt-1 text-xs text-gray-400">JPG or PNG. It's resized here before uploading.</p>
-                    {(photoError || errors.photo || errors.photo_card) && (
-                        <p role="alert" className="mt-1 text-sm text-red-400">{photoError ?? errors.photo ?? errors.photo_card}</p>
+                    {(photoError || errors.photo || errors.photo_card || errors.photo_thumb) && (
+                        <p role="alert" className="mt-1 text-sm text-red-400">{photoError ?? errors.photo ?? errors.photo_card ?? errors.photo_thumb}</p>
                     )}
                 </div>
             </div>

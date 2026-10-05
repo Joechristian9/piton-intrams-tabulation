@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 class MigrateLegacyEventTest extends TestCase
 {
-    use RefreshDatabase, SeedsLegacyData;
+    use BuildsEvents, RefreshDatabase, SeedsLegacyData;
 
     private array $backupsBefore = [];
 
@@ -97,9 +97,43 @@ class MigrateLegacyEventTest extends TestCase
         $this->artisan('events:migrate-legacy')->assertSuccessful();
 
         $this->artisan('events:migrate-legacy')
-            ->expectsOutputToContain('Event #1 already exists.')
+            ->expectsOutputToContain('The old pageant was already migrated')
             ->assertFailed();
         $this->assertSame(1, Event::count());
+    }
+
+    /** An admin may create new events before migrating; theirs must stay untouched. */
+    public function test_runs_when_other_events_were_created_first(): void
+    {
+        $other = $this->makeEvent(['code' => 'ict27']);
+        $theirJudge = $this->addJudges($other, 1)->first();
+        $theirJudge->forceFill(['username' => 'ict27-judge1'])->save();
+        $theirCandidate = $this->addCandidate($other, 'Female', 1);
+        $ids = $this->seedLegacy(withAdminRow: false);
+        $legacy = Snapshot::normalize(LegacyResults::snapshot());
+
+        $this->artisan('events:migrate-legacy')->expectsOutputToContain('results identical')->assertSuccessful();
+
+        $piton = Event::where('code', 'piton')->sole();
+        $this->assertSame([$other->id, 'ict27-judge1'], [$theirJudge->fresh()->event_id, $theirJudge->fresh()->username]);
+        $this->assertSame($other->id, $theirCandidate->fresh()->event_id);
+        $this->assertSame(['piton-judge1', 'piton-judge2', 'piton-judge3'], $piton->judges()->pluck('username')->all());
+        $this->assertSame(count($ids['female']) + count($ids['male']), $piton->candidates()->count());
+        $this->assertSame([], Snapshot::diff($legacy, Snapshot::normalize(app(LegacyImporter::class)->newSnapshot($piton))));
+    }
+
+    public function test_duplicate_old_score_rows_are_reported_clearly(): void
+    {
+        $ids = $this->seedLegacy(withAdminRow: false);
+        $row = (array) DB::table('top_five_scores')->first();
+        unset($row['id']);
+        DB::table('top_five_scores')->insert($row);
+
+        $this->artisan('events:migrate-legacy')
+            ->expectsOutputToContain('duplicate score rows')
+            ->assertFailed();
+
+        $this->assertSame(0, Event::count());
     }
 
     public function test_a_mismatch_rolls_everything_back(): void

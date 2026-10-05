@@ -112,10 +112,52 @@ class EventLifecycleTest extends TestCase
         $this->assertSame(Event::SETUP, $event->fresh()->status);
     }
 
+    public function test_switching_to_one_round_needs_round_two_cleared_first(): void
+    {
+        $event = $this->makeEvent([], ['Female'], [[1, 'A', 10], [2, 'B', 40]]);
+
+        $this->as()->put(route('admin.events.update', $event), $this->settings(['code' => $event->code, 'rounds' => 1, 'finalists_per_group' => null]))
+            ->assertSessionHasErrors(['rounds' => 'Delete the Round 2 categories first.']);
+        $this->assertSame(2, $event->fresh()->rounds);
+
+        $this->category($event, 'B')->delete();
+        $this->setFinalists($event, $this->addCandidate($event, 'Female', 1));
+        $this->as()->put(route('admin.events.update', $event), $this->settings(['code' => $event->code, 'rounds' => 1, 'finalists_per_group' => null]))
+            ->assertSessionHasErrors(['rounds' => "This can't change after the finalists are set."]);
+    }
+
+    public function test_start_needs_candidates_in_every_group(): void
+    {
+        $event = $this->makeEvent();
+        $this->addJudges($event, 1);
+        $this->addCandidate($event, 'Female', 1);
+
+        $this->as()->post(route('admin.events.start', $event), ['password' => 'password'])
+            ->assertSessionHasErrors(['event' => 'Before starting, add: candidates in Male.']);
+        $this->assertSame(Event::SETUP, $event->fresh()->status);
+    }
+
+    public function test_duplicate_code_stays_within_20_characters(): void
+    {
+        $event = $this->makeEvent(['code' => 'mr-ms-intrams-2026x']);   // 19 chars
+        Event::factory()->create(['code' => 'mr-ms-intrams-c']);
+
+        $this->as()->post(route('admin.events.duplicate', $event))->assertRedirect();
+
+        $copy = Event::where('name', 'Copy of ' . $event->name)->sole();
+        $this->assertLessThanOrEqual(20, strlen($copy->code));
+        $this->assertMatchesRegularExpression('/^[a-z0-9-]+$/', $copy->code);
+        // The copy's settings can be saved without touching the code.
+        $this->as()->put(route('admin.events.update', $copy), $this->settings(['code' => $copy->code, 'name' => 'Next year']))
+            ->assertSessionHasNoErrors();
+    }
+
     public function test_start_and_close_need_the_password_and_bump_the_event_stamp(): void
     {
         $event = $this->makeEvent();
         $this->addJudges($event, 1);
+        $this->addCandidate($event, 'Female', 1);
+        $this->addCandidate($event, 'Male', 1);
 
         $this->as()->post(route('admin.events.start', $event), ['password' => 'wrong'])->assertSessionHasErrors('password');
         $this->assertSame(Event::SETUP, $event->fresh()->status);
@@ -139,6 +181,8 @@ class EventLifecycleTest extends TestCase
         $a = $this->makeEvent(['status' => Event::LIVE]);
         $b = $this->makeEvent();
         $this->addJudges($b, 1);
+        $this->addCandidate($b, 'Female', 1);
+        $this->addCandidate($b, 'Male', 1);
 
         $this->as()->post(route('admin.events.start', $b), ['password' => 'password'])->assertSessionHasNoErrors();
 

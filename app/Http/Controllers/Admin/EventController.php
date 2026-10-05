@@ -91,6 +91,14 @@ class EventController extends Controller
         if ($data['code'] !== $event->code && $event->judges()->exists()) {
             $locked['code'] = "The code can't change after judges are created.";
         }
+        // Going down to 1 round would hide the finals setup instead of removing it.
+        if ($data['rounds'] === 1 && $event->rounds === 2 && ! isset($locked['rounds'])) {
+            if ($event->finalistsSet()) {
+                $locked['rounds'] = "This can't change after the finalists are set.";
+            } elseif ($event->categories()->where('round', 2)->exists()) {
+                $locked['rounds'] = 'Delete the Round 2 categories first.';
+            }
+        }
         if ($locked) {
             throw ValidationException::withMessages($locked);
         }
@@ -111,6 +119,10 @@ class EventController extends Controller
             'Round 1 categories' => ! $event->categories()->where('round', 1)->exists(),
             'Round 2 categories' => $event->rounds === 2 && ! $event->categories()->where('round', 2)->exists(),
         ]));
+        $emptyGroups = $event->groups()->doesntHave('candidates')->pluck('name');
+        if ($emptyGroups->isNotEmpty()) {
+            $missing[] = 'candidates in ' . $emptyGroups->implode(', ');
+        }
         if ($missing) {
             throw ValidationException::withMessages(['event' => 'Before starting, add: ' . implode(', ', $missing) . '.']);
         }
@@ -154,7 +166,7 @@ class EventController extends Controller
             $copy = Event::create([
                 ...$event->only(['rounds', 'finalists_per_group', 'finals_from_zero', 'round1_weight', 'finals_weight']),
                 'name' => "Copy of {$event->name}",
-                'code' => $this->freeCode("{$event->code}-copy"),
+                'code' => $this->freeCode($event->code),
                 'status' => Event::SETUP,
             ]);
 
@@ -202,13 +214,16 @@ class EventController extends Controller
         ];
     }
 
-    private function freeCode(string $base): string
+    /** "{code}-copy", then "{code}-copy-2"…, shortening the code to stay within 20 characters. */
+    private function freeCode(string $original): string
     {
-        $code = $base;
-        for ($i = 2; Event::where('code', $code)->exists(); $i++) {
-            $code = "{$base}-{$i}";
-        }
+        for ($i = 1; ; $i++) {
+            $suffix = $i === 1 ? '-copy' : "-copy-{$i}";
+            $code = rtrim(substr($original, 0, 20 - strlen($suffix)), '-') . $suffix;
 
-        return $code;
+            if (! Event::where('code', $code)->exists()) {
+                return $code;
+            }
+        }
     }
 }

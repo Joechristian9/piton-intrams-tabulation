@@ -141,19 +141,6 @@ class EventJudgesTest extends TestCase
                 ->where('judges.1.username', 'pageant26-judge2'));
     }
 
-    public function test_changing_your_own_password_clears_the_stored_copy(): void
-    {
-        $this->addViaAdmin(1);
-        $judge = $this->event->judges()->first();
-        $plain = $this->plain($judge);
-
-        $this->actingAs($judge)->put(route('password.update'), [
-            'current_password' => $plain, 'password' => 'new-password-123', 'password_confirmation' => 'new-password-123',
-        ])->assertSessionHasNoErrors();
-
-        $this->assertNull($judge->fresh()->password_plain_encrypted);
-    }
-
     public function test_judges_cannot_manage_judges(): void
     {
         $judge = $this->addJudges($this->event, 1)->first();

@@ -24,12 +24,14 @@ class CandidateController extends Controller
     public function store(Request $request, Event $event)
     {
         $data = $this->validated($request, $event, null);
+        $photo = $this->storePhotos($request, $event);
 
-        Candidate::create([
-            ...$data,
-            'event_id' => $event->id,
-            'profile_img' => $this->storePhotos($request, $event),
-        ]);
+        try {
+            Candidate::create([...$data, 'event_id' => $event->id, 'profile_img' => $photo]);
+        } catch (\Throwable $e) {
+            $this->deletePhotos($photo);   // don't leave files for a candidate that wasn't saved
+            throw $e;
+        }
         LiveVersions::bump($event->id, LiveVersions::EVENT);
 
         return back();
@@ -44,13 +46,24 @@ class CandidateController extends Controller
             throw ValidationException::withMessages(['group_id' => "This candidate has scores, so their group can't change."]);
         }
 
+        $old = $candidate->profile_img;
         if ($request->hasFile('photo')) {
-            $old = $candidate->profile_img;
             $data['profile_img'] = $this->storePhotos($request, $event);
-            $this->deletePhotos($old);
         }
 
-        $candidate->update($data);
+        try {
+            $candidate->update($data);
+        } catch (\Throwable $e) {
+            if (isset($data['profile_img'])) {
+                $this->deletePhotos($data['profile_img']);   // keep the old photo, drop the new files
+            }
+            throw $e;
+        }
+
+        // Only now that the new photo is saved, remove the old files.
+        if (isset($data['profile_img'])) {
+            $this->deletePhotos($old);
+        }
         LiveVersions::bump($event->id, LiveVersions::EVENT);
 
         return back();

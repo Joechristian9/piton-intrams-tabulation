@@ -172,20 +172,23 @@ Top 3 finalists, and print signed result sheets.
 - Events: `Admin\EventController` (`admin.events.index|store|edit|update|destroy|start|close|duplicate`).
   Several events can be live. Start/Close/Delete need the admin password
   (`Components/PasswordConfirmDialog.jsx` + `Pages/Admin/Events/usePasswordAction.js`). Start
-  needs judges, groups and categories for every round. Locks (`App\Support\EventLocks`):
-  rounds/finals settings once scored, Top N once finalists set, code once judges exist; delete
-  only without scores. Duplicate copies settings, groups and categories. Uploaded photos use
-  the `uploads` disk (`public/uploads`, no storage:link).
+  needs judges, groups, candidates in every group and categories for every round. Locks
+  (`App\Support\EventLocks`): rounds/finals settings once scored, Top N once finalists set,
+  code once judges exist; going 2 → 1 rounds needs the Round 2 categories deleted and no
+  finalists; delete only without scores. Duplicate copies settings, groups and categories
+  (code `{code}-copy[-n]`, shortened to fit 20 chars). Uploaded photos use the `uploads` disk
+  (`public/uploads`, git-ignored, no storage:link).
 - Groups/categories: `Admin\GroupController` (`admin.groups.*`; names unique per event; can't
   delete a group with candidates) and `Admin\CategoryController` (`admin.categories.*`; max
   0.01–999.99; a scored category keeps its max/round and can't be deleted; a round with scores
-  takes no new categories). Setup tabs `Pages/Admin/Events/Tabs/{Groups,Categories}.jsx` use
+  takes no new categories, added or moved in). Setup tabs `Pages/Admin/Events/Tabs/{Groups,Categories}.jsx` use
   `Tabs/request.js` (`send(method, url, data, toast, then)` — chain dependent requests).
 - Candidates: `Admin\CandidateController` (`admin.candidates.*`; update is PUT via POST +
   `_method` for multipart). Numbers unique per group; photo = `photo` (JPEG ≤ 5 MB) +
   `photo_card` (WebP ≤ 1 MB) + `photo_thumb` (WebP ≤ 200 KB), required together, stored as
   `uploads/candidates/{event}/{uuid}.jpg|.webp|-thumb.webp`; replacing/deleting removes old
-  upload files but never touches `public/candidates/`. Scored candidates can't be deleted or
+  upload files only after the save succeeds (a failed save removes the new files instead) and
+  never touches `public/candidates/`. Scored candidates can't be deleted or
   regrouped. `CandidatePhoto.jsx` maps both path styles to their WebPs. Tests use real image
   fixtures in `tests/fixtures/` (this PHP has no WebP support to fake them).
 - Judges per event: `App\Support\JudgeAccounts` (`create($event, $count)` → "Judge n",
@@ -194,8 +197,9 @@ Top 3 finalists, and print signed result sheets.
   reveal/reprint; `resetPassword`, `revealPassword`). `Admin\EventJudgeController`
   (`admin.event-judges.store|update|reset|destroy|slips`; delete needs password and no scores).
   Judges tab + `Pages/Admin/Events/JudgeSlips.jsx` (printable). The old global Judges page,
-  `JudgeController` and their tests are gone. A judge changing their own password clears
-  the stored copy (`Auth\PasswordController`).
+  `JudgeController` and their tests are gone. **Judges can't edit or delete their own
+  account**: `/profile` and `password.update` use the `admin` middleware
+  (`JudgeAccountLockTest`); the admin renames judges and resets passwords.
 - Login: field `login` ("Username or email"); `LoginRequest` uses `email` when it contains
   `@`, otherwise `username`; errors and throttling are keyed on `login`.
 - Old tables (`top_five_*`, `candidates.gender`) are dropped by
@@ -211,7 +215,9 @@ Top 3 finalists, and print signed result sheets.
 - Routes are cached too: clear them (`php artisan route:clear`) before tests after route
   changes, then `php artisan optimize` when done.
 - `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):
-  refuses if any event exists or if old score rows came from non-judge accounts, runs
+  refuses if an event with code `piton` exists, if old score rows came from non-judge accounts,
+  or if the old tables hold duplicate (candidate/finalist, judge) rows. It only touches judges
+  and candidates not yet in any event, so events created first are safe. It runs
   `db:backup`, imports in a transaction, and commits only if `App\Legacy\Snapshot::diff`
   against `App\Legacy\LegacyResults` (frozen copy of the old formulas, `DB::table` only —
   never "improve" it) is empty. Run it between events only. Its test keeps RefreshDatabase
@@ -228,8 +234,7 @@ Ask the user before fixing; report them when they touch the area you're working 
 2. ~~Score submissions trusted `judge_id`~~ — fixed: scores are saved for the logged-in judge.
 3. **A judge can resubmit (overwrite) their own scores by a direct request.** The UI locks a
    submitted tab, but `score.store` upserts. Round 1 is locked server-side once finalists are set.
-4. **`/profile` lets a judge delete their own account**, which cascades and deletes their
-   scores (`scores.judge_id` cascades). Not linked in the sidebar, but reachable by URL.
+4. ~~`/profile` let a judge delete or change their own account~~ — fixed: admins only.
 5. ~~Public registration~~ — removed; judges are created per event.
 6. **Password reset can't work** (`MAIL_MAILER=log`); the login page tells users to ask the
    organizer instead. The `/forgot-password` routes still exist.

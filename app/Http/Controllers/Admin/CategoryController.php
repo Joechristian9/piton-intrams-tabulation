@@ -53,6 +53,14 @@ class CategoryController extends Controller
             }
         }
 
+        // Moving a category into a round that already has scores is the same as
+        // adding one there: everyone's totals would change.
+        if ($data['round'] !== $category->round && EventLocks::roundHasScores($category->event, $data['round'])) {
+            throw ValidationException::withMessages([
+                'round' => "Round {$data['round']} already has scores, so a new category would change everyone's totals.",
+            ]);
+        }
+
         $category->update($data);
         LiveVersions::bump($category->event_id, LiveVersions::EVENT);
 

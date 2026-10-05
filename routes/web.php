@@ -72,7 +72,9 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin/events/{event}')
     Route::get('/score-submissions', [AdminScoreSubmissionController::class, 'index'])->name('admin.events.score_submissions');
 });
 
-Route::middleware('auth')->group(function () {
+// Account page: admins only. Judge accounts are managed by the admin (deleting one
+// would also delete its scores).
+Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

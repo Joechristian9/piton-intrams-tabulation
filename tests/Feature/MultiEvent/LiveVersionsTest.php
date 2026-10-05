@@ -27,7 +27,7 @@ class LiveVersionsTest extends TestCase
         $judge = $this->addJudges($event, 1)->first();
         LiveVersions::bump($event->id, LiveVersions::EVENT);
 
-        $this->actingAs($judge)->get('/profile')
+        $this->actingAs($judge)->get(route('dashboard'))   // a setup event: the waiting page
             ->assertInertia(fn (Assert $page) => $page->where('live', LiveVersions::all($event->id)));
     }
 

@@ -122,6 +122,17 @@ class GroupsAndCategoriesTest extends TestCase
             ->assertSessionHasNoErrors();
     }
 
+    public function test_moving_an_empty_category_into_a_scored_round_is_blocked(): void
+    {
+        $this->scoreIn('Sports Wear');
+        $delivery = $this->category($this->event, 'Delivery');   // round 2, no scores
+
+        $this->as()->put(route('admin.categories.update', $delivery), ['name' => 'Delivery', 'round' => 1, 'max_score' => 40, 'position' => 2])
+            ->assertSessionHasErrors(['round' => "Round 1 already has scores, so a new category would change everyone's totals."]);
+
+        $this->assertSame(2, $delivery->fresh()->round);
+    }
+
     public function test_unscored_category_can_be_deleted(): void
     {
         $delivery = $this->category($this->event, 'Delivery');

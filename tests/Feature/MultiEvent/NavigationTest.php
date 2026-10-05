@@ -88,7 +88,7 @@ class NavigationTest extends TestCase
         $event = $this->liveEvent();
         $judge = $this->addJudges($event, 1)->first();
 
-        $this->actingAs($judge)->get('/profile')
+        $this->actingAs($judge)->get(route('score.show', $this->category($event, 'Production Number')))
             ->assertInertia(fn (Assert $page) => $page->where('nav', Navigation::for($judge, null)));
     }
 
