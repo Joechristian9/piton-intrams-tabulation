@@ -214,7 +214,7 @@ Top 3 finalists, and print signed result sheets.
   carry-over mode. `App\Support\AdminEventContext` picks the admin's event (URL → session →
   latest started live → newest); the sidebar has an event picker (`nav.events`).
   `Navigation` builds the admin sections; shared `live` uses the admin's event.
-- Setting finalists: `AdminFinalistController` (`admin.finalists.set`, POST
+- Setting finalists: `Admin\FinalistController` (`admin.finalists.set`, POST
   `/admin/events/{event}/finalists`): admin password, 2-round events only, exactly
   `finalists_per_group` per group, candidates of this event; removed finalists lose their
   round-2 scores; sets `finalists_set_at` (Round 1 lock) and bumps finalists+scores.
