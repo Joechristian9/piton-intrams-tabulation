@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CandidateController;
 use App\Http\Controllers\JudgeController;
 use App\Http\Controllers\JudgeNotificationController;
+use App\Http\Controllers\Judge\HomeController;
 use App\Http\Controllers\Judge\ScoringController;
 use App\Http\Controllers\ScoreSubmissionController;
 use App\Http\Controllers\ResultController\TopFiveSelectionResultController;
@@ -18,9 +19,8 @@ Route::get('/', function () {
     return Inertia::render('Welcome');
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Judges land in their event; admins (and judges not yet in an event) get the dashboard.
+Route::get('/dashboard', HomeController::class)->middleware(['auth', 'verified'])->name('dashboard');
 
 
 // Categories Routes

@@ -1,8 +1,8 @@
 import { Lock } from "lucide-react";
 
-// Shown on Round 1 (Top 3 Selection) pages once the admin has set the finalists:
+// Shown on Round 1 (Top N Selection) pages once the admin has set the finalists:
 // the scores are final and the inputs are locked (the server rejects changes too).
-export default function RoundClosedNotice() {
+export default function RoundClosedNotice({ count = 3 }) {
     return (
         <div
             role="status"
@@ -13,10 +13,10 @@ export default function RoundClosedNotice() {
             </span>
             <div>
                 <p className="text-sm font-semibold text-yellow-300">
-                    Top 3 Selection is closed
+                    Top {count} Selection is closed
                 </p>
                 <p className="mt-1 text-sm text-gray-300">
-                    The Top 3 finalists have been set, so these scores can no longer be
+                    The Top {count} finalists have been set, so these scores can no longer be
                     changed.
                 </p>
             </div>

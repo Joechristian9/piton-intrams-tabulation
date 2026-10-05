@@ -147,7 +147,7 @@ class JudgeScoringTest extends TestCase
 
         $this->actingAs($this->judge)->get(route('score.show', $cat))
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Judge/Score', false)   // page file arrives in Task 9
+                ->component('Judge/Score')
                 ->where('event.id', $this->event->id)
                 ->where('category', ['id' => $cat->id, 'name' => 'Sports Wear', 'max_score' => 25, 'round' => 1])
                 ->where('roundClosed', false)
