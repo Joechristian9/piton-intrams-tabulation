@@ -24,7 +24,17 @@ import {
     ChevronUp,
     Users,
     BellRing,
+    CalendarDays,
 } from "lucide-react";
+
+// Icon keys sent by the server-built nav (see app/Support/Navigation.php).
+const NAV_ICONS = {
+    category: ListChecks,
+    trophy: Trophy,
+    events: CalendarDays,
+    bell: BellRing,
+    users: Users,
+};
 
 export default function SidebarMain({ children }) {
     const [open, setOpen] = useState(false);
@@ -33,6 +43,10 @@ export default function SidebarMain({ children }) {
     const { props, url } = usePage();
     const user = props.auth?.user; // ✅ get current logged-in user
     const finalistsSet = Boolean(props.finalistsSet);
+    // Multi-event nav from the server; the old hard-coded menus remain for users
+    // without an event until every page has moved over.
+    const nav = props.nav ?? { event: null, sections: [] };
+    const useServerNav = Boolean(nav.event) || nav.sections.length > 0;
 
     // Close the logout menu when the sidebar collapses.
     useEffect(() => {
@@ -52,7 +66,7 @@ export default function SidebarMain({ children }) {
                     "h-5 w-5 shrink-0",
                     active
                         ? "text-amber-500 dark:text-amber-400"
-                        : "text-neutral-700 dark:text-neutral-200"
+                        : "text-neutral-700 dark:text-neutral-200",
                 ),
             });
 
@@ -183,22 +197,65 @@ export default function SidebarMain({ children }) {
     const managementLinks =
         user?.role === "admin"
             ? [
-                  { label: "Judges", icon: <Users />, route: "admin.judges.index" },
-                  { label: "Notify Judges", icon: <BellRing />, route: "admin.notify_judges" },
+                  {
+                      label: "Judges",
+                      icon: <Users />,
+                      route: "admin.judges.index",
+                  },
+                  {
+                      label: "Notify Judges",
+                      icon: <BellRing />,
+                      route: "admin.notify_judges",
+                  },
               ]
             : [];
 
+    const renderNavItems = (items) =>
+        items.map((item) => {
+            const active = item.href === currentPath;
+            const Icon = NAV_ICONS[item.icon] ?? ListChecks;
+
+            return (
+                <SidebarLink
+                    key={item.href}
+                    active={active}
+                    link={{
+                        label: item.label,
+                        icon: (
+                            <Icon
+                                className={cn(
+                                    "h-5 w-5 shrink-0",
+                                    active
+                                        ? "text-amber-500 dark:text-amber-400"
+                                        : "text-neutral-700 dark:text-neutral-200",
+                                )}
+                            />
+                        ),
+                        href: item.href,
+                        onClick: (e) => {
+                            e.preventDefault();
+                            router.get(item.href);
+                        },
+                    }}
+                />
+            );
+        });
+
     // The browser tab is named after the active sidebar item, so tab and menu always match.
-    const activeLink = [...mainLinks, ...top5Links, ...managementLinks].find(
-        (link) => isActive(link.route)
-    );
+    const activeLink = useServerNav
+        ? nav.sections
+              .flatMap((s) => s.items)
+              .find((item) => item.href === currentPath)
+        : [...mainLinks, ...top5Links, ...managementLinks].find((link) =>
+              isActive(link.route),
+          );
 
     return (
         <div className="dark">
             {activeLink && <Head title={activeLink.label.trim()} />}
             <div
                 className={cn(
-                    "flex flex-1 flex-col overflow-hidden rounded-md border border-neutral-200 bg-gray-100 md:flex-row dark:border-neutral-700 dark:bg-neutral-800 w-full h-screen"
+                    "flex flex-1 flex-col overflow-hidden rounded-md border border-neutral-200 bg-gray-100 md:flex-row dark:border-neutral-700 dark:bg-neutral-800 w-full h-screen",
                 )}
             >
                 <Sidebar open={open} setOpen={setOpen}>
@@ -207,31 +264,53 @@ export default function SidebarMain({ children }) {
                             {/* Logo at the top */}
                             {open ? <Logo /> : <LogoIcon />}
 
-                            {/* Main section header */}
-                            <SidebarHeader label="Top 3 Selection" />
-
-                            {/* Main links */}
-                            <div className="mt-2 flex flex-col gap-2">
-                                {renderLinks(mainLinks)}
-                            </div>
-
-                            {/* Top 3 Finalist section: hidden until the admin sets the finalists */}
-                            {finalistsSet && (
+                            {useServerNav ? (
                                 <>
-                                    <SidebarHeader label="Top 3 Finalist" />
-                                    <div className="mt-2 flex flex-col gap-2">
-                                        {renderLinks(top5Links)}
-                                    </div>
+                                    {nav.event && open && (
+                                        <p className="mt-4 truncate px-1 text-sm font-semibold text-yellow-400">
+                                            {nav.event.name}
+                                        </p>
+                                    )}
+                                    {nav.sections.map((section) => (
+                                        <React.Fragment key={section.label}>
+                                            <SidebarHeader
+                                                label={section.label}
+                                            />
+                                            <div className="mt-2 flex flex-col gap-2">
+                                                {renderNavItems(section.items)}
+                                            </div>
+                                        </React.Fragment>
+                                    ))}
                                 </>
-                            )}
-
-                            {/* Admin-only management links */}
-                            {user?.role === "admin" && (
+                            ) : (
                                 <>
-                                    <SidebarHeader label="Management" />
+                                    {/* Main section header */}
+                                    <SidebarHeader label="Top 3 Selection" />
+
+                                    {/* Main links */}
                                     <div className="mt-2 flex flex-col gap-2">
-                                        {renderLinks(managementLinks)}
+                                        {renderLinks(mainLinks)}
                                     </div>
+
+                                    {/* Top 3 Finalist section: hidden until the admin sets the finalists */}
+                                    {finalistsSet && (
+                                        <>
+                                            <SidebarHeader label="Top 3 Finalist" />
+                                            <div className="mt-2 flex flex-col gap-2">
+                                                {renderLinks(top5Links)}
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Admin-only management links */}
+                                    {user?.role === "admin" && (
+                                        <>
+                                            <SidebarHeader label="Management" />
+                                            <div className="mt-2 flex flex-col gap-2">
+                                                {renderLinks(managementLinks)}
+                                            </div>
+                                        </>
+                                    )}
                                 </>
                             )}
                         </div>
@@ -268,7 +347,7 @@ export default function SidebarMain({ children }) {
                                                 className={cn(
                                                     "h-4 w-4 transition-transform",
                                                     !userMenuOpen &&
-                                                        "rotate-180"
+                                                        "rotate-180",
                                                 )}
                                             />
                                         </span>
@@ -276,7 +355,10 @@ export default function SidebarMain({ children }) {
                                     href: "#",
                                     icon: (
                                         <picture className="contents">
-                                            <source srcSet="/isu-logo.webp" type="image/webp" />
+                                            <source
+                                                srcSet="/isu-logo.webp"
+                                                type="image/webp"
+                                            />
                                             <img
                                                 src="/isu-logo.png"
                                                 className="h-7 w-7 shrink-0 rounded-full"

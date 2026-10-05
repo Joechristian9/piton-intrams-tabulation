@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\TopFiveCandidates;
 use App\Support\LiveVersions;
+use App\Support\Navigation;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -36,6 +37,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            // Sidebar items built from the user's event (App\Support\Navigation).
+            'nav' => fn () => Navigation::for($request->user(), null),
             // The sidebar hides the Top 3 Finalist categories until the admin sets them.
             'finalistsSet' => fn () => $request->user() !== null && TopFiveCandidates::exists(),
             // Version stamps this page was built with; the pollers reload when they change.
