@@ -1,86 +1,59 @@
 "use client";
 
-import React from "react";
+import React, { memo, useCallback } from "react";
 import ScoreInput from "./ScoreInput";
 import CandidatePhoto from "@/Components/CandidatePhoto";
 
-const CandidateGrid = ({
-    candidates,
-    maxScore = 10,
-    scoresRef,
-    onScoreChange,
-    submitted = false,
-}) => {
+// One candidate's card. Memoized: typing a score re-renders only the card whose
+// value changed, not the whole grid (judges' phones have to repaint less).
+const CandidateCard = memo(function CandidateCard({ candidate, value, maxScore, disabled, onScoreChange }) {
+    const handleChange = useCallback((val) => onScoreChange(candidate.id, val), [onScoreChange, candidate.id]);
+
     return (
-        <div className="w-full p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 justify-center">
-            {candidates.map((candidate, index) => {
-                const defaultImage = "/candidates/linear.jfif";
-                const genderFolder =
-                    candidate.gender?.toLowerCase() || "unknown";
-                const imageSrc = candidate.profile_img
-                    ? candidate.profile_img
-                    : `/candidates/${genderFolder}/${genderFolder}_${
-                          index + 1
-                      }.jpg`;
+        <div className="bg-neutral-900 border border-white/20 rounded-xl p-4 shadow-[0_4px_15px_rgba(255,255,255,0.3)] hover:shadow-[0_6px_25px_rgba(255,255,255,0.5)] transition-shadow duration-300 flex flex-col items-center gap-3 overflow-hidden">
+            <CandidatePhoto
+                path={candidate.profile_img}
+                alt={`${candidate.first_name} ${candidate.last_name}`}
+                width={480}
+                height={720}
+                className="w-full h-72 object-cover rounded-md"
+            />
 
-                // Get existing or saved score for this candidate
-                const existingOrSavedScore =
-                    scoresRef.current[candidate.id] ?? candidate.existing_score;
+            <div className="text-center w-full overflow-hidden">
+                <p className="text-xs text-gray-400 mb-1"># {candidate.candidate_number}</p>
+                <h3 className="font-bold text-white truncate w-full px-2">
+                    {candidate.first_name} {candidate.last_name}
+                </h3>
 
-                const handleScoreChange = (val) => {
-                    onScoreChange(candidate.id, val);
-                };
-
-                return (
-                    <div
-                        key={candidate.id}
-                        className="bg-neutral-900 border border-white/20 rounded-xl p-4 shadow-[0_4px_15px_rgba(255,255,255,0.3)] hover:shadow-[0_6px_25px_rgba(255,255,255,0.5)] transition-shadow duration-300 flex flex-col items-center gap-3 overflow-hidden"
+                {candidate.course && (
+                    <p
+                        className="text-sm text-gray-300 mt-1 whitespace-nowrap overflow-hidden text-ellipsis w-full px-2"
+                        title={candidate.course}
                     >
-                        <CandidatePhoto
-                            path={imageSrc || defaultImage}
-                            alt={`${candidate.first_name} ${candidate.last_name}`}
-                            width={480}
-                            height={720}
-                            className="w-full h-72 object-cover rounded-md"
-                        />
+                        {candidate.course}
+                    </p>
+                )}
+            </div>
 
-                        <div className="text-center w-full overflow-hidden">
-                            <p className="text-xs text-gray-400 mb-1">
-                                # {candidate.candidate_number}
-                            </p>
-                            <h3 className="font-bold text-white truncate w-full px-2">
-                                {candidate.first_name} {candidate.last_name}
-                            </h3>
-
-                            {candidate.course && (
-                                <p
-                                    className="text-sm text-gray-300 mt-1 whitespace-nowrap overflow-hidden text-ellipsis w-full px-2"
-                                    title={candidate.course}
-                                >
-                                    {candidate.course}
-                                </p>
-                            )}
-                        </div>
-
-                        <ScoreInput
-                            value={
-                                scoresRef.current[candidate.id] ??
-                                candidate.existing_score ??
-                                ""
-                            }
-                            onChange={handleScoreChange}
-                            max={maxScore}
-                            disabled={
-                                submitted ||
-                                (candidate.existing_score != null &&
-                                    candidate.existing_score !== "")
-                            }
-                        />
-                    </div>
-                );
-            })}
+            <ScoreInput value={value} onChange={handleChange} max={maxScore} disabled={disabled} />
         </div>
     );
-};
+});
+
+const CandidateGrid = ({ candidates, maxScore = 10, scoresRef, onScoreChange, submitted = false }) => (
+    <div className="w-full p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 justify-center">
+        {candidates.map((candidate) => (
+            <CandidateCard
+                key={candidate.id}
+                candidate={candidate}
+                // Typed draft first, then the saved score.
+                value={scoresRef.current[candidate.id] ?? candidate.existing_score ?? ""}
+                maxScore={maxScore}
+                disabled={submitted || candidate.existing_score != null}
+                onScoreChange={onScoreChange}
+            />
+        ))}
+    </div>
+);
 
 export default CandidateGrid;

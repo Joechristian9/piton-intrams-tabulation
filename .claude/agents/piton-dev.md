@@ -212,6 +212,12 @@ Top 3 finalists, and print signed result sheets.
   candidate added mid-event can still be scored). Tested with Node's runner:
   `npm run test:js` (`tests/js/*.test.mjs`). The page clears drafts only when the response is
   the scoring page; a closed event redirects straight to the dashboard with the error.
+- Performance: admin setup/list pages load counts and "has scores" flags in bulk
+  (`withCount` / `withExists`, `Event::scores()` is a has-many-through) —
+  `AdminQueryCountTest` fails if a page's query count grows with the event. Measured
+  2026-10-05 on a full Event #1: judge poll 0 queries, scoring page 8, admin results 8–10.
+  On the judge page `CandidateGrid` renders memoized `CandidateCard`s and `Score.jsx` keeps
+  `handleScoreChange` stable (`useCallback`), so typing re-renders one card, not the grid.
 - **A page must never import another page** (e.g. `Edit.jsx` importing from `Index.jsx`): Vite
   folds the imported page into the importer and drops it from the build manifest, so the
   server 500s ("Unable to locate file in Vite manifest"). Put shared code in `lib/`,

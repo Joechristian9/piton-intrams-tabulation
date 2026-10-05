@@ -25,17 +25,19 @@ class EventController extends Controller
     public function index()
     {
         return Inertia::render('Admin/Events/Index', [
-            'events' => Event::orderByDesc('id')->get()->map(fn (Event $e) => [
-                'id' => $e->id,
-                'name' => $e->name,
-                'code' => $e->code,
-                'status' => $e->status,
-                'rounds' => $e->rounds,
-                'started_at' => $e->started_at?->toIso8601String(),
-                'candidates' => $e->candidates()->count(),
-                'judges' => $e->judges()->count(),
-                'hasScores' => EventLocks::hasScores($e),
-            ]),
+            // Counts and "has scores" in the same query for every event (no query per event).
+            'events' => Event::withCount(['candidates', 'judges'])->withExists('scores')
+                ->orderByDesc('id')->get()->map(fn (Event $e) => [
+                    'id' => $e->id,
+                    'name' => $e->name,
+                    'code' => $e->code,
+                    'status' => $e->status,
+                    'rounds' => $e->rounds,
+                    'started_at' => $e->started_at?->toIso8601String(),
+                    'candidates' => $e->candidates_count,
+                    'judges' => $e->judges_count,
+                    'hasScores' => (bool) $e->scores_exists,
+                ]),
         ]);
     }
 
@@ -48,27 +50,34 @@ class EventController extends Controller
 
     public function edit(Event $event)
     {
+        // One query each for groups, categories and candidates, with their counts and
+        // "has scores" flags attached; the page-level locks are derived from those.
+        $categories = $event->categories()->withExists('scores')->get();
+        $judges = EventJudgeController::judgeRows($event);
+        $roundHasScores = fn (int $round) => $categories->where('round', $round)->contains('scores_exists', true);
+
         return Inertia::render('Admin/Events/Edit', [
             'event' => [
                 ...$event->only(['id', 'name', 'code', 'status', 'rounds', 'finalists_per_group', 'finals_from_zero', 'round1_weight', 'finals_weight']),
             ],
-            'groups' => $event->groups->map(fn ($g) => [
+            'groups' => $event->groups()->withCount('candidates')->get()->map(fn ($g) => [
                 'id' => $g->id, 'name' => $g->name, 'position' => $g->position,
-                'candidates' => $g->candidates()->count(),
+                'candidates' => $g->candidates_count,
             ]),
-            'categories' => $event->categories->map(fn ($c) => [
+            'categories' => $categories->map(fn ($c) => [
                 'id' => $c->id, 'round' => $c->round, 'name' => $c->name,
                 'max_score' => (float) $c->max_score, 'position' => $c->position,
-                'hasScores' => $c->scores()->exists(),
+                'hasScores' => (bool) $c->scores_exists,
             ]),
-            'candidates' => $event->candidates()->orderBy('group_id')->orderBy('candidate_number')->get()
-                ->map(fn ($c) => [...EventResults::candidatePayload($c), 'group_id' => $c->group_id, 'hasScores' => EventLocks::candidateHasScores($c)]),
-            'judges' => EventJudgeController::judgeRows($event),
+            'candidates' => $event->candidates()->withExists('scores')
+                ->orderBy('group_id')->orderBy('candidate_number')->get()
+                ->map(fn ($c) => [...EventResults::candidatePayload($c), 'group_id' => $c->group_id, 'hasScores' => (bool) $c->scores_exists]),
+            'judges' => $judges,
             'locks' => [
-                'hasScores' => EventLocks::hasScores($event),
-                'roundHasScores' => [1 => EventLocks::roundHasScores($event, 1), 2 => EventLocks::roundHasScores($event, 2)],
+                'hasScores' => $categories->contains('scores_exists', true),
+                'roundHasScores' => [1 => $roundHasScores(1), 2 => $roundHasScores(2)],
                 'finalistsSet' => $event->finalistsSet(),
-                'hasJudges' => $event->judges()->exists(),
+                'hasJudges' => $judges !== [],
             ],
         ]);
     }

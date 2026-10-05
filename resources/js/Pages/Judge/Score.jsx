@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { router, usePage } from "@inertiajs/react";
 import { toast } from "sonner";
 import PageLayout from "@/Layouts/PageLayout";
@@ -21,11 +21,16 @@ function GroupTab({ candidates, category, judgeId, draftKey, scoresRef, roundClo
     const [, setRerender] = useState(0);
     const [submitted, setSubmitted] = useState(false);
 
-    const handleScoreChange = (candidateId, score) => {
-        scoresRef.current = { ...scoresRef.current, [candidateId]: score };
-        saveDraftScores(draftKey, judgeId, scoresRef.current);
-        setRerender((r) => r + 1);
-    };
+    // Stable across renders so the memoized candidate cards only re-render when
+    // their own value changes.
+    const handleScoreChange = useCallback(
+        (candidateId, score) => {
+            scoresRef.current = { ...scoresRef.current, [candidateId]: score };
+            saveDraftScores(draftKey, judgeId, scoresRef.current);
+            setRerender((r) => r + 1);
+        },
+        [draftKey, judgeId, scoresRef]
+    );
 
     // Saved scores count as filled, so a candidate added after this judge's first
     // submit can still be scored (lib/scoreSheet.js).

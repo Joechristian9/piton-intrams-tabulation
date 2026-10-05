@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 /**
  * A pageant or contest: its groups, categories (per round), candidates, judges
@@ -57,6 +58,12 @@ class Event extends Model
     public function candidates(): HasMany
     {
         return $this->hasMany(Candidate::class);
+    }
+
+    /** Every score given in this event (through its categories). */
+    public function scores(): HasManyThrough
+    {
+        return $this->hasManyThrough(Score::class, Category::class);
     }
 
     public function judges(): HasMany
