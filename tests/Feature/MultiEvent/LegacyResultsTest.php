@@ -4,57 +4,17 @@ namespace Tests\Feature\MultiEvent;
 
 use App\Legacy\LegacyResults;
 use App\Legacy\Snapshot;
-use App\Services\TopFiveSelectionService;
-use App\Services\TopFiveService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * The frozen copy of today's formulas must equal today's services exactly, so
- * the migration compares against the real current results.
+ * The frozen copy of the old formulas. It was proven equal to the old services
+ * (TopFiveSelectionService / TopFiveService) before they were deleted; it must
+ * not change, because events:migrate-legacy compares against it.
  */
 class LegacyResultsTest extends TestCase
 {
-    use RefreshDatabase, SeedsLegacyData;
-
-    /** Today's service output → snapshot group shape. */
-    private function fromService(array $result): array
-    {
-        $rows = fn ($list) => array_map(fn ($r) => [
-            'candidate_id' => (int) (is_array($r['candidate']) ? $r['candidate']['id'] : $r['candidate']->id),
-            'scores' => array_map('floatval', $r['scores']),
-            'total' => (float) $r['total'],
-            'rank' => (int) $r['rank'],
-        ], $list);
-
-        return ['female' => $rows($result['femaleCandidates']), 'male' => $rows($result['maleCandidates'])];
-    }
-
-    public function test_legacy_snapshot_matches_todays_services(): void
-    {
-        $this->seedLegacy();
-        $snapshot = LegacyResults::snapshot();
-        $selection = app(TopFiveSelectionService::class);
-        $finals = app(TopFiveService::class);
-
-        foreach (LegacyResults::CATEGORY_MAP as $key => $meta) {
-            $service = $meta['round'] === 1 ? $selection : $finals;
-            $this->assertSame(
-                Snapshot::normalize(['x' => $this->fromService($service->getResultsPerCategory($key))])['x'],
-                Snapshot::normalize($snapshot)["category:{$key}"],
-                "category {$key}"
-            );
-        }
-
-        $this->assertSame(
-            Snapshot::normalize(['x' => $this->fromService($selection->getTopFiveSelectionResults())])['x'],
-            Snapshot::normalize($snapshot)['round1']
-        );
-        $this->assertSame(
-            Snapshot::normalize(['x' => $this->fromService($finals->getTotalResults())])['x'],
-            Snapshot::normalize($snapshot)['finals']
-        );
-    }
+    use RefreshDatabase;
 
     public function test_category_map_matches_the_current_pageant(): void
     {

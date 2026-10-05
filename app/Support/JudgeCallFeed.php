@@ -66,41 +66,4 @@ class JudgeCallFeed
             'events' => array_map(fn ($e) => array_diff_key($e, ['judge_ids' => true]), $events),
         ];
     }
-
-    // ---- Old single-pageant pages (removed with them) ----
-
-    private static function legacyFeed(): EventFeed
-    {
-        return new EventFeed('judge-call-feed');
-    }
-
-    /** @deprecated */
-    public static function pushLegacy(string $sender, ?string $category, ?string $message, ?array $judgeIds): array
-    {
-        $label = $category ? Criteria::LABELS[$category] : null;
-
-        return self::legacyFeed()->push([
-            'category' => $category,
-            'label' => $label,
-            'route' => $category ? Criteria::JUDGE_ROUTES[$category] : null,
-            'message' => $message ?: ($label
-                ? "Please score the candidates for {$label}."
-                : 'Please check your scoring sheets.'),
-            'sender' => $sender,
-            'judge_ids' => $judgeIds ? array_values(array_map('intval', $judgeIds)) : null,
-            'sent_at' => now()->toIso8601String(),
-        ]);
-    }
-
-    /** @deprecated */
-    public static function forJudgeLegacy(int $judgeId): array
-    {
-        return self::filterFor(self::legacyFeed()->read(), $judgeId);
-    }
-
-    /** @deprecated */
-    public static function recentLegacy(int $count = 10): array
-    {
-        return array_reverse(array_slice(self::legacyFeed()->read()['events'], -$count));
-    }
 }

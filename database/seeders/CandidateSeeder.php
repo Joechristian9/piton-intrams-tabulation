@@ -4,11 +4,16 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Candidate;
+use App\Models\Event;
 
 class CandidateSeeder extends Seeder
 {
     public function run(): void
     {
+        // Event #1 (created by DatabaseSeeder); candidates belong to its Female/Male groups.
+        $event = Event::where('code', 'piton')->firstOrFail();
+        $groups = $event->groups()->pluck('id', 'name');
+
         $femaleCandidates = [
             ['Trixie Anne', 'Datul', 'Bachelor of Technology and Livelihood Education'],
             ['Jelly Mae', 'Panangui', 'Bachelor of Technical-Vocational Teacher Education'],
@@ -45,6 +50,8 @@ class CandidateSeeder extends Seeder
             Candidate::create([
                 'first_name'      => $candidate[0],
                 'last_name'       => $candidate[1],
+                'event_id'        => $event->id,
+                'group_id'        => $groups['Female'],
                 'gender'          => 'female',
                 'course'          => $candidate[2],
                 'profile_img'     => "candidates/female/" . ($index + 1) . ".JPEG",
@@ -57,6 +64,8 @@ class CandidateSeeder extends Seeder
             Candidate::create([
                 'first_name'      => $candidate[0],
                 'last_name'       => $candidate[1],
+                'event_id'        => $event->id,
+                'group_id'        => $groups['Male'],
                 'gender'          => 'male',
                 'course'          => $candidate[2],
                 'profile_img'     => "candidates/male/" . ($index + 1) . ".JPEG",

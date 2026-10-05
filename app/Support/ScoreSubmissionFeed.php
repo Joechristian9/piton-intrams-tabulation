@@ -27,19 +27,6 @@ class ScoreSubmissionFeed
         ]);
     }
 
-    /** @deprecated old single-pageant controllers; removed with them. */
-    public static function pushLegacy(int $judgeId, string $category, array $candidateIds): void
-    {
-        $judge = User::find($judgeId)?->name ?? 'A judge';
-
-        $genders = Candidate::whereIn('id', $candidateIds)->pluck('gender')->unique();
-        $group = $genders->count() === 1 ? ucfirst($genders->first()) . ' ' : '';
-
-        $label = Criteria::LABELS[$category] ?? $category;
-
-        self::feed(LiveVersions::LEGACY)->push(['message' => "{$judge} submitted {$group}{$label} scores"]);
-    }
-
     /**
      * Events newer than $after, plus the latest sequence number. A first poll
      * ($after null) returns no backlog.

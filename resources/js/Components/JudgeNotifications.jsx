@@ -7,9 +7,8 @@ import { toast } from "sonner";
 import { ArrowRight, BellRing, X } from "lucide-react";
 import { JUDGE_TOPICS, isStale, reloadPage } from "@/lib/liveVersions";
 
-// Link for a call: a category of the judge's event, or an old route name.
-const hrefOf = (e) =>
-    e.category_id ? route("score.show", e.category_id) : e.route ? route(e.route) : null;
+// Link for a call: one of the judge's event categories (none for a general reminder).
+const hrefOf = (e) => (e.category_id ? route("score.show", e.category_id) : null);
 
 // Highest notification id already toasted in this browser tab. Module level, so
 // moving between pages doesn't repeat a toast.

@@ -92,6 +92,16 @@ class NavigationTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('nav', Navigation::for($judge, null)));
     }
 
+    public function test_admin_without_any_event_still_gets_the_events_link(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->assertSame(['event' => null, 'sections' => [[
+            'label' => 'Management',
+            'items' => [['label' => 'Events', 'href' => route('admin.events.index', [], false), 'icon' => 'events']],
+        ]]], Navigation::for($admin, null));
+    }
+
     public function test_guests_and_judges_without_an_event_get_an_empty_nav(): void
     {
         $this->assertSame(['event' => null, 'sections' => []], Navigation::for(null, null));

@@ -90,6 +90,36 @@ class NotifyJudgesTest extends TestCase
             ->assertJsonCount(0, 'events');
     }
 
+    public function test_only_selected_judges_receive_a_targeted_call(): void
+    {
+        [$chosen, $other] = $this->addJudges($this->a, 2)->all();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.notify.send', $this->a), ['message' => 'Please hurry', 'judge_ids' => [$chosen->id]])
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($chosen)->getJson(route('judge.notifications'))
+            ->assertJsonPath('events.0.message', 'Please hurry')
+            ->assertJsonMissingPath('events.0.judge_ids');   // recipients aren't shown to judges
+        $this->actingAs($other)->getJson(route('judge.notifications'))->assertJsonCount(0, 'events');
+    }
+
+    public function test_general_reminder_without_a_category(): void
+    {
+        $judge = $this->addJudges($this->a, 1)->first();
+
+        $this->actingAs($this->admin)->post(route('admin.notify.send', $this->a), [])->assertSessionHasNoErrors();
+
+        $this->actingAs($judge)->getJson(route('judge.notifications'))
+            ->assertJsonPath('events.0.message', 'Please check your scoring sheets.')
+            ->assertJsonPath('events.0.category_id', null);
+    }
+
+    public function test_admins_cannot_read_the_judge_feed(): void
+    {
+        $this->actingAs($this->admin)->getJson(route('judge.notifications'))->assertForbidden();
+    }
+
     public function test_judges_cannot_open_notify(): void
     {
         $judge = $this->addJudges($this->a, 1)->first();

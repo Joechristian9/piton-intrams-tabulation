@@ -31,13 +31,8 @@ class Candidate extends Model
         return $this->belongsTo(EventGroup::class, 'group_id');
     }
 
-    public function topFiveScores()
+    public function scores()
     {
-        return $this->hasMany(TopFiveScore::class);
-    }
-
-    public function topFiveSelectionScores()
-    {
-        return $this->hasMany(TopFiveSelectionScore::class);
+        return $this->hasMany(Score::class);
     }
 }

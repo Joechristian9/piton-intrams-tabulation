@@ -48,7 +48,7 @@ function ProgressBadge({ scored, total }) {
     );
 }
 
-const NotifyJudges = ({ judges = [], categories = [], progress = {}, recent = [], sendUrl = null, event = null }) => {
+const NotifyJudges = ({ judges = [], categories = [], progress = {}, recent = [], sendUrl, event }) => {
     // Round headings in category order (e.g. "Top 3 Selection", "Top 3 Finalist").
     const rounds = [...new Set(categories.map((c) => c.round))];
     // Suggested message for a category ("" = general reminder).
@@ -114,7 +114,7 @@ const NotifyJudges = ({ judges = [], categories = [], progress = {}, recent = []
             judge_ids: d.audience === "all" ? null : d.judge_ids,
         }));
 
-        post(sendUrl ?? route("admin.notify_judges.send"), {
+        post(sendUrl, {
             preserveScroll: true,
             onSuccess: () => {
                 toast.success(

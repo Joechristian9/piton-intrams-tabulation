@@ -5,9 +5,9 @@ import { router, usePage } from "@inertiajs/react";
 import { toast } from "sonner";
 import PageLayout from "@/Layouts/PageLayout";
 import { Tabs } from "@/Components/ui/tabs";
-import CandidateGrid from "@/Pages/Categories/Partials/CandidateGrid";
-import ScoreAlertDialog from "@/Pages/Categories/Partials/ScoreAlertDialog";
-import RoundClosedNotice from "@/Pages/Categories/Partials/RoundClosedNotice";
+import CandidateGrid from "@/Pages/Judge/Partials/CandidateGrid";
+import ScoreAlertDialog from "@/Pages/Judge/Partials/ScoreAlertDialog";
+import RoundClosedNotice from "@/Pages/Judge/Partials/RoundClosedNotice";
 import {
     loadDraftScores,
     saveDraftScores,

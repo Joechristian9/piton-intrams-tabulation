@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\TopFiveCandidates;
 use App\Support\AdminEventContext;
 use App\Support\LiveVersions;
 use App\Support\Navigation;
@@ -50,14 +49,13 @@ class HandleInertiaRequests extends Middleware
             ],
             // Sidebar items built from the user's event (App\Support\Navigation).
             'nav' => fn () => Navigation::for($request->user(), $resolveAdminEvent()),
-            // The sidebar hides the Top 3 Finalist categories until the admin sets them.
-            'finalistsSet' => fn () => $request->user() !== null && TopFiveCandidates::exists(),
             // Version stamps this page was built with; the pollers reload when they change.
-            // Judges: their event. Admins: the event they're looking at. Users without an
-            // event: the old pages' slot.
-            'live' => fn () => $request->user()
-                ? LiveVersions::all($request->user()->event_id ?? $resolveAdminEvent()?->id ?? LiveVersions::LEGACY)
-                : null,
+            // Judges: their event. Admins: the event they're looking at.
+            'live' => function () use ($request, $resolveAdminEvent) {
+                $eventId = $request->user()?->event_id ?? $resolveAdminEvent()?->id;
+
+                return $eventId ? LiveVersions::all($eventId) : null;
+            },
         ];
     }
 }

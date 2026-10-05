@@ -7,6 +7,7 @@ use App\Models\Score;
 use App\Models\User;
 use App\Support\LiveVersions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -48,6 +49,39 @@ class JudgeScoringTest extends TestCase
         $this->assertSame(22.5, Score::sole()->score);
         $this->assertSame($this->judge->id, Score::sole()->judge_id);
         $this->assertNotSame($before, LiveVersions::all($this->event->id)['scores']);
+    }
+
+    public function test_saving_a_whole_tab_writes_scores_in_one_query(): void
+    {
+        $candidates = collect(range(1, 6))->map(fn ($n) => $this->addCandidate($this->event, 'Female', $n));
+        $writes = 0;
+        DB::listen(function ($query) use (&$writes) {
+            if (preg_match('/^\s*(insert|update)\s.*"scores"/i', $query->sql)) {
+                $writes++;
+            }
+        });
+
+        $this->submit('Sports Wear', $candidates->mapWithKeys(fn ($c) => [$c->id => 20])->all())->assertSessionHasNoErrors();
+
+        $this->assertSame(1, $writes);
+        $this->assertSame(6, Score::count());
+    }
+
+    public function test_scoring_page_loads_the_judges_scores_with_one_query(): void
+    {
+        foreach (range(1, 5) as $n) {
+            $this->addCandidate($this->event, 'Female', $n);
+        }
+        $reads = 0;
+        DB::listen(function ($query) use (&$reads) {
+            if (preg_match('/^\s*select\s.*from "scores"/i', $query->sql)) {
+                $reads++;
+            }
+        });
+
+        $this->actingAs($this->judge)->get(route('score.show', $this->category($this->event, 'Sports Wear')))->assertOk();
+
+        $this->assertSame(1, $reads);
     }
 
     public function test_resubmitting_updates_the_same_score_row(): void

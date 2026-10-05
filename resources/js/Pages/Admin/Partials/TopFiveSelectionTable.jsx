@@ -13,34 +13,9 @@ import {
 import PrintButton from "./PrintButton";
 import CandidatePhoto from "@/Components/CandidatePhoto";
 
-// Display names that differ from the category key.
-const CATEGORY_LABELS = {
-    casual_wear: "Sports Wear",
-    closed_door_interview: "Casual Interview",
-};
-
-// Highest score a judge can give per category; each round adds up to 100.
-const CATEGORY_MAX = {
-    production_number: 10,
-    casual_wear: 25,
-    swim_wear: 25,
-    formal_wear: 25,
-    closed_door_interview: 15,
-    face_and_figure: 50,
-    delivery: 40,
-    overall_appeal: 10,
-};
-
-// Categories come as objects {id, name, max_score} from multi-event pages, or as
-// the old column keys from the single-pageant pages (removed later).
-const columnOf = (cat) =>
-    typeof cat === "object"
-        ? { key: cat.id, label: cat.name, max: Number(cat.max_score) }
-        : {
-              key: cat,
-              label: CATEGORY_LABELS[cat] ?? cat.replaceAll("_", " "),
-              max: CATEGORY_MAX[cat],
-          };
+// A round's totals table: each category's average ({id, name, max_score}), the
+// round total and rank; the top `highlight` rows are marked.
+const columnOf = (cat) => ({ key: cat.id, label: cat.name, max: Number(cat.max_score) });
 
 const TopFiveSelectionTable = ({
     title,

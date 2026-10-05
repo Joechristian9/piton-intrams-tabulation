@@ -18,7 +18,7 @@ const POLL_MS = 3000;
 export default function ScoreSubmissionToasts() {
     const { props } = usePage();
     const isAdmin = props.auth?.user?.role === "admin";
-    // The event the admin is looking at; admins without events use the old feed.
+    // The event the admin is looking at (none: nothing to poll).
     const eventId = props.nav?.event?.id ?? null;
 
     // Version stamps the current page was built with.
@@ -26,7 +26,7 @@ export default function ScoreSubmissionToasts() {
     liveRef.current = props.live;
 
     useEffect(() => {
-        if (!isAdmin) return;
+        if (!isAdmin || !eventId) return;
 
         let timer = null;
         let inFlight = false;
@@ -45,9 +45,7 @@ export default function ScoreSubmissionToasts() {
             inFlight = true;
 
             try {
-                const feedUrl = eventId
-                    ? route("admin.events.score_submissions", eventId)
-                    : route("admin.score_submissions");
+                const feedUrl = route("admin.events.score_submissions", eventId);
                 const { data } = await axios.get(feedUrl, {
                     params: { after: lastSeqByFeed[feedUrl] ?? undefined },
                     timeout: 10000,

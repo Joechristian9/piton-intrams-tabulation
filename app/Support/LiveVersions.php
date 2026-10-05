@@ -25,12 +25,6 @@ class LiveVersions
     /** A judge saved scores (admin results and progress). */
     public const SCORES = 'scores';
 
-    /** @deprecated old single-pageant code; judges belong to the event now. */
-    public const JUDGES = self::EVENT;
-
-    /** Slot used by the old single-pageant pages until they're removed. */
-    public const LEGACY = 0;
-
     private const TOPICS = [self::EVENT, self::FINALISTS, self::SCORES];
 
     /** Mark these topics of one event as changed. */
