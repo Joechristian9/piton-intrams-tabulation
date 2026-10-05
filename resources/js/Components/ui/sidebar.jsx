@@ -170,11 +170,16 @@ export const Logo = () => {
         >
             {/* Fixed-size logo container */}
             <div className="h-8 w-8 flex-shrink-0 flex-grow-0 relative">
-                <img
-                    src="/PITON%20LOGO.png"
-                    alt="Piton Logo"
-                    className="h-full w-full object-contain"
-                />
+                <picture>
+                    <source srcSet="/piton-logo.webp" type="image/webp" />
+                    <img
+                        src="/PITON%20LOGO.png"
+                        alt="Piton Logo"
+                        width={32}
+                        height={32}
+                        className="h-full w-full object-contain"
+                    />
+                </picture>
             </div>
 
             {/* Text label does not affect logo size */}
@@ -183,7 +188,7 @@ export const Logo = () => {
                 animate={{ opacity: 1 }}
                 className="font-medium whitespace-pre text-black dark:text-white"
             >
-                PITON
+                PITON Tabulation
             </motion.span>
         </a>
     );
@@ -196,11 +201,16 @@ export const LogoIcon = () => {
             className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal"
         >
             <div className="h-8 w-8 flex-shrink-0 flex-grow-0 relative">
-                <img
-                    src="/PITON%20LOGO.png"
-                    alt="Piton Logo"
-                    className="h-full w-full object-contain"
-                />
+                <picture>
+                    <source srcSet="/piton-logo.webp" type="image/webp" />
+                    <img
+                        src="/PITON%20LOGO.png"
+                        alt="Piton Logo"
+                        width={32}
+                        height={32}
+                        className="h-full w-full object-contain"
+                    />
+                </picture>
             </div>
         </a>
     );
