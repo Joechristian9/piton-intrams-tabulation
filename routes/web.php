@@ -6,6 +6,8 @@ use App\Http\Controllers\CandidateController;
 use App\Http\Controllers\JudgeController;
 use App\Http\Controllers\JudgeNotificationController;
 use App\Http\Controllers\Admin\FinalistController;
+use App\Http\Controllers\Admin\NotifyController;
+use App\Http\Controllers\Admin\ScoreSubmissionController as AdminScoreSubmissionController;
 use App\Http\Controllers\Admin\ResultsController;
 use App\Http\Controllers\Judge\HomeController;
 use App\Http\Controllers\Judge\ScoringController;
@@ -127,6 +129,9 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin/events/{event}')
     Route::get('/results/round1', [ResultsController::class, 'round1'])->name('admin.results.round1');
     Route::get('/results/standings', [ResultsController::class, 'standings'])->name('admin.results.standings');
     Route::post('/finalists', [FinalistController::class, 'store'])->name('admin.finalists.set');
+    Route::get('/notify', [NotifyController::class, 'index'])->name('admin.notify');
+    Route::post('/notify', [NotifyController::class, 'store'])->name('admin.notify.send');
+    Route::get('/score-submissions', [AdminScoreSubmissionController::class, 'index'])->name('admin.events.score_submissions');
 });
 
 // Multi-event judge scoring: one page per category of the judge's own event

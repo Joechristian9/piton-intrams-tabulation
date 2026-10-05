@@ -220,6 +220,12 @@ Top 3 finalists, and print signed result sheets.
   round-2 scores; sets `finalists_set_at` (Round 1 lock) and bumps finalists+scores.
   `TieBreakDialog` takes `sections=[{label, plan}]` + `count`; `ConfirmFinalistsDialog` takes
   `groups=[{label, finalists}]` + `count`; `planFinalists(rows, count)`.
+- Notifications per event: `Admin\NotifyController` (`admin.notify` / `admin.notify.send`,
+  `/admin/events/{event}/notify`; category and judges must belong to the event) and
+  `JudgeCallFeed::push($eventId, …)` / `forJudge(User)` (feed key per event; calls carry
+  `category_id`, the banner links via `route('score.show', id)`). Admin toasts poll
+  `admin.events.score_submissions` for the event in `nav.event`. The `*Legacy` feed methods
+  serve the old pages until they're removed.
 - Routes are cached too: clear them (`php artisan route:clear`) before tests after route
   changes, then `php artisan optimize` when done.
 - `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):

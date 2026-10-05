@@ -2,31 +2,33 @@
 
 namespace App\Support;
 
+use App\Models\Category;
+use App\Models\User;
+
 /**
- * Notifications from the admin asking judges to start scoring, polled by the
- * judges' pages. Kept in the cache, not the database.
+ * Notifications from the admin asking an event's judges to start scoring,
+ * polled by the judges' pages. Kept in the cache per event, not the database.
  */
 class JudgeCallFeed
 {
     /** Judges still see a call sent within this window (e.g. if they log in late). */
     private const RECENT_MINUTES = 120;
 
-    private static function feed(): EventFeed
+    private static function feed(int $eventId): EventFeed
     {
-        return new EventFeed('judge-call-feed');
+        return new EventFeed("judge-call-feed:{$eventId}");
     }
 
     /**
-     * @param  array<int>|null  $judgeIds  null = every judge
+     * @param  array<int>|null  $judgeIds  null = every judge of the event
      */
-    public static function push(string $sender, ?string $category, ?string $message, ?array $judgeIds): array
+    public static function push(int $eventId, string $sender, ?int $categoryId, ?string $message, ?array $judgeIds): array
     {
-        $label = $category ? Criteria::LABELS[$category] : null;
+        $label = $categoryId ? Category::find($categoryId)?->name : null;
 
-        return self::feed()->push([
-            'category' => $category,
+        return self::feed($eventId)->push([
+            'category_id' => $categoryId,
             'label' => $label,
-            'route' => $category ? Criteria::JUDGE_ROUTES[$category] : null,
             'message' => $message ?: ($label
                 ? "Please score the candidates for {$label}."
                 : 'Please check your scoring sheets.'),
@@ -37,9 +39,19 @@ class JudgeCallFeed
     }
 
     /** Recent calls addressed to this judge, newest last, plus the latest id. */
-    public static function forJudge(int $judgeId): array
+    public static function forJudge(User $judge): array
     {
-        $feed = self::feed()->read();
+        return self::filterFor(self::feed($judge->event_id)->read(), $judge->id);
+    }
+
+    /** The latest calls of an event, newest first, for the admin page. */
+    public static function recent(int $eventId, int $count = 10): array
+    {
+        return array_reverse(array_slice(self::feed($eventId)->read()['events'], -$count));
+    }
+
+    private static function filterFor(array $feed, int $judgeId): array
+    {
         $since = now()->subMinutes(self::RECENT_MINUTES);
 
         $events = array_values(array_filter(
@@ -55,9 +67,40 @@ class JudgeCallFeed
         ];
     }
 
-    /** The latest calls, newest first, for the admin page. */
-    public static function recent(int $count = 10): array
+    // ---- Old single-pageant pages (removed with them) ----
+
+    private static function legacyFeed(): EventFeed
     {
-        return array_reverse(array_slice(self::feed()->read()['events'], -$count));
+        return new EventFeed('judge-call-feed');
+    }
+
+    /** @deprecated */
+    public static function pushLegacy(string $sender, ?string $category, ?string $message, ?array $judgeIds): array
+    {
+        $label = $category ? Criteria::LABELS[$category] : null;
+
+        return self::legacyFeed()->push([
+            'category' => $category,
+            'label' => $label,
+            'route' => $category ? Criteria::JUDGE_ROUTES[$category] : null,
+            'message' => $message ?: ($label
+                ? "Please score the candidates for {$label}."
+                : 'Please check your scoring sheets.'),
+            'sender' => $sender,
+            'judge_ids' => $judgeIds ? array_values(array_map('intval', $judgeIds)) : null,
+            'sent_at' => now()->toIso8601String(),
+        ]);
+    }
+
+    /** @deprecated */
+    public static function forJudgeLegacy(int $judgeId): array
+    {
+        return self::filterFor(self::legacyFeed()->read(), $judgeId);
+    }
+
+    /** @deprecated */
+    public static function recentLegacy(int $count = 10): array
+    {
+        return array_reverse(array_slice(self::legacyFeed()->read()['events'], -$count));
     }
 }

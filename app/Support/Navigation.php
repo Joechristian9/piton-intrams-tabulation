@@ -45,10 +45,10 @@ class Navigation
                 ['label' => "Top {$n} Finalist", 'items' => [...$resultItems(2), $standings]],
             ];
 
-        // The old single-pageant management pages, until per-event ones replace them.
+        // Judges: the old single-pageant page until per-event judges replace it.
         $sections[] = ['label' => 'Management', 'items' => [
             ['label' => 'Judges', 'href' => route('admin.judges.index', [], false), 'icon' => 'users'],
-            ['label' => 'Notify Judges', 'href' => route('admin.notify_judges', [], false), 'icon' => 'bell'],
+            ['label' => 'Notify Judges', 'href' => route('admin.notify', $event, false), 'icon' => 'bell'],
         ]];
 
         return [

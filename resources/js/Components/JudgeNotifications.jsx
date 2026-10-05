@@ -7,6 +7,10 @@ import { toast } from "sonner";
 import { ArrowRight, BellRing, X } from "lucide-react";
 import { JUDGE_TOPICS, isStale, reloadPage } from "@/lib/liveVersions";
 
+// Link for a call: a category of the judge's event, or an old route name.
+const hrefOf = (e) =>
+    e.category_id ? route("score.show", e.category_id) : e.route ? route(e.route) : null;
+
 // Highest notification id already toasted in this browser tab. Module level, so
 // moving between pages doesn't repeat a toast.
 let lastToastedId = null;
@@ -98,12 +102,12 @@ export default function JudgeNotifications() {
                             toast.info(e.message, {
                                 description: `From ${e.sender}`,
                                 duration: 8000,
-                                action: e.route
+                                action: hrefOf(e)
                                     ? {
                                           label: `Go to ${e.label}`,
                                           onClick: () => {
                                               dismiss(e.id);
-                                              router.visit(route(e.route));
+                                              router.visit(hrefOf(e));
                                           },
                                       }
                                     : undefined,
@@ -136,7 +140,7 @@ export default function JudgeNotifications() {
     if (!current) return null;
 
     const onTargetPage =
-        current.route && route(current.route, undefined, false) === url.split("?")[0];
+        hrefOf(current) && new URL(hrefOf(current)).pathname === url.split("?")[0];
 
     return (
         <div
@@ -157,9 +161,9 @@ export default function JudgeNotifications() {
                     </p>
                     <p className="mt-1 text-sm text-white">{current.message}</p>
 
-                    {current.route && !onTargetPage && (
+                    {hrefOf(current) && !onTargetPage && (
                         <Link
-                            href={route(current.route)}
+                            href={hrefOf(current)}
                             onClick={() => dismiss(current.id)}
                             className="mt-3 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-yellow-400 px-4 text-sm font-semibold text-black transition duration-200 hover:bg-yellow-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900"
                         >

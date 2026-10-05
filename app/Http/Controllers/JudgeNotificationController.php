@@ -33,7 +33,7 @@ class JudgeNotificationController extends Controller
                 ])
                 ->values(),
             'progress' => $this->progress(),
-            'recent' => JudgeCallFeed::recent(),
+            'recent' => JudgeCallFeed::recentLegacy(),
         ]);
     }
 
@@ -52,7 +52,7 @@ class JudgeNotificationController extends Controller
             ],
         ]);
 
-        JudgeCallFeed::push(
+        JudgeCallFeed::pushLegacy(
             $request->user()->name,
             $data['category'] ?? null,
             isset($data['message']) ? trim($data['message']) : null,
@@ -67,12 +67,14 @@ class JudgeNotificationController extends Controller
      */
     public function feed(Request $request)
     {
-        abort_unless($request->user()->role === 'judge', 403);
+        $judge = $request->user();
+        abort_unless($judge->role === 'judge', 403);
 
-        return response()->json([
-            ...JudgeCallFeed::forJudge($request->user()->id),
-            'live' => LiveVersions::all(LiveVersions::LEGACY),
-        ]);
+        // Judges of an event get that event's calls; judges not yet moved to an
+        // event still get the old single-pageant feed.
+        return response()->json($judge->event_id
+            ? [...JudgeCallFeed::forJudge($judge), 'live' => LiveVersions::all($judge->event_id)]
+            : [...JudgeCallFeed::forJudgeLegacy($judge->id), 'live' => LiveVersions::all(LiveVersions::LEGACY)]);
     }
 
     /**
