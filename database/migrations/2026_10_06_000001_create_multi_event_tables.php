@@ -55,7 +55,7 @@ return new class extends Migration
             // label is optional.
             $table->string('gender')->nullable()->change();
             $table->string('course')->nullable()->change();
-            $table->unique(['event_id', 'candidate_number']);
+            $table->unique(['group_id', 'candidate_number']); // each group numbers from 1
         });
 
         Schema::table('users', function (Blueprint $table) {
@@ -97,7 +97,7 @@ return new class extends Migration
         });
 
         Schema::table('candidates', function (Blueprint $table) {
-            $table->dropUnique(['event_id', 'candidate_number']);
+            $table->dropUnique(['group_id', 'candidate_number']);
             $table->dropConstrainedForeignId('group_id');
             $table->dropConstrainedForeignId('event_id');
         });

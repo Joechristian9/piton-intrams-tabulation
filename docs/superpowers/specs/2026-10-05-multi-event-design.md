@@ -52,7 +52,7 @@ New and changed tables (SQLite, Laravel migrations):
 
 **candidates** (existing table, extended) — adds `event_id`, `group_id`; keeps `candidate_number`,
 `first_name`, `last_name`, `course`, `profile_img`. `gender` is replaced by the group.
-Unique (`event_id`, `candidate_number`).
+Unique (`group_id`, `candidate_number`) — each group numbers from 1, as today (Female #1–12, Male #1–10).
 
 **users** (existing) — adds nullable `event_id` (set for judges, null for admins) and unique
 nullable `username`, plus `password_plain_encrypted` (nullable, Laravel `Crypt`) so the admin can

@@ -49,18 +49,21 @@ class SchemaTest extends TestCase
         Score::create($row);
     }
 
-    public function test_candidate_numbers_are_unique_per_event_but_reusable_across_events(): void
+    /** Today's pageant numbers each group from 1 (Female #1–12, Male #1–10). */
+    public function test_candidate_numbers_are_unique_per_group_but_reusable_across_groups_and_events(): void
     {
         [$a, $b] = Event::factory()->count(2)->create();
-        $groupA = EventGroup::factory()->for($a)->create();
+        $female = EventGroup::factory()->for($a)->create(['name' => 'Female']);
+        $male = EventGroup::factory()->for($a)->create(['name' => 'Male']);
         $groupB = EventGroup::factory()->for($b)->create();
 
-        Candidate::factory()->create(['event_id' => $a->id, 'group_id' => $groupA->id, 'candidate_number' => 1]);
+        Candidate::factory()->create(['event_id' => $a->id, 'group_id' => $female->id, 'candidate_number' => 1]);
+        Candidate::factory()->create(['event_id' => $a->id, 'group_id' => $male->id, 'candidate_number' => 1]);
         Candidate::factory()->create(['event_id' => $b->id, 'group_id' => $groupB->id, 'candidate_number' => 1]);
-        $this->assertSame(2, Candidate::count());
+        $this->assertSame(3, Candidate::count());
 
         $this->expectException(UniqueConstraintViolationException::class);
-        Candidate::factory()->create(['event_id' => $a->id, 'group_id' => $groupA->id, 'candidate_number' => 1]);
+        Candidate::factory()->create(['event_id' => $a->id, 'group_id' => $female->id, 'candidate_number' => 1]);
     }
 
     public function test_new_event_candidates_need_no_gender_or_course(): void
