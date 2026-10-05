@@ -8,6 +8,7 @@ import TieBreakDialog, {
     FINALIST_COUNT,
     planFinalists,
 } from "./Partials/TieBreakDialog";
+import ConfirmFinalistsDialog from "./Partials/ConfirmFinalistsDialog";
 import { HoverBorderGradient } from "@/Components/ui/hover-border-gradient";
 import { toast } from "sonner";
 
@@ -20,33 +21,58 @@ const TopFiveSelectionResult = ({
 }) => {
     // Set when there's a tie at the cutoff and the admin needs to pick.
     const [tiePlan, setTiePlan] = useState(null);
+    // The finalists picked, waiting for the admin's password in the confirm dialog.
+    const [pendingIds, setPendingIds] = useState(null);
+    const [passwordError, setPasswordError] = useState(null);
+    const [processing, setProcessing] = useState(false);
 
-    const saveFinalists = (candidateIds) => {
-        const loadingToastId = toast.loading(
-            `Saving Top ${FINALIST_COUNT}...`
-        );
+    const askToConfirm = (candidateIds) => {
+        setTiePlan(null);
+        setPasswordError(null);
+        setPendingIds(candidateIds);
+    };
+
+    const closeConfirm = () => {
+        setPendingIds(null);
+        setPasswordError(null);
+    };
+
+    const saveFinalists = (password) => {
+        setProcessing(true);
+        setPasswordError(null);
 
         router.post(
             route("topFive.set"),
-            { candidate_ids: candidateIds },
+            { candidate_ids: pendingIds, password },
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.dismiss(loadingToastId);
+                    closeConfirm();
                     toast.success(
                         `Top ${FINALIST_COUNT} Male & Female saved successfully!`
                     );
-                    setTiePlan(null);
                 },
                 onError: (errors) => {
-                    toast.dismiss(loadingToastId);
+                    // Wrong password: keep the dialog open so the admin can retry.
+                    if (errors.password) {
+                        setPasswordError(errors.password);
+                        return;
+                    }
+                    closeConfirm();
                     toast.error(
                         errors.candidate_ids ??
                             `Failed to save Top ${FINALIST_COUNT}.`
                     );
                 },
+                onFinish: () => setProcessing(false),
             }
         );
+    };
+
+    // Ranked rows of the pending finalists, for the confirm dialog.
+    const pendingFinalists = pendingIds && {
+        female: femaleCandidates.filter((c) => pendingIds.includes(c.candidate.id)),
+        male: maleCandidates.filter((c) => pendingIds.includes(c.candidate.id)),
     };
 
     const handleSetTopThree = () => {
@@ -65,7 +91,7 @@ const TopFiveSelectionResult = ({
         }
 
         if (plan.female.slots === 0 && plan.male.slots === 0) {
-            saveFinalists(
+            askToConfirm(
                 [...plan.female.sure, ...plan.male.sure].map(
                     (c) => c.candidate.id
                 )
@@ -114,6 +140,16 @@ const TopFiveSelectionResult = ({
                 <TieBreakDialog
                     plan={tiePlan}
                     onCancel={() => setTiePlan(null)}
+                    onConfirm={askToConfirm}
+                />
+            )}
+
+            {pendingFinalists && (
+                <ConfirmFinalistsDialog
+                    finalists={pendingFinalists}
+                    error={passwordError}
+                    processing={processing}
+                    onCancel={closeConfirm}
                     onConfirm={saveFinalists}
                 />
             )}

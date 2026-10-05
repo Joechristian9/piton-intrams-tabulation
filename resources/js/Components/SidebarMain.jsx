@@ -32,6 +32,7 @@ export default function SidebarMain({ children }) {
 
     const { props, url } = usePage();
     const user = props.auth?.user; // ✅ get current logged-in user
+    const finalistsSet = Boolean(props.finalistsSet);
 
     // Close the logout menu when the sidebar collapses.
     useEffect(() => {
@@ -214,13 +215,15 @@ export default function SidebarMain({ children }) {
                                 {renderLinks(mainLinks)}
                             </div>
 
-                            {/* Top 5 section header */}
-                            <SidebarHeader label="Top 3 Finalist" />
-
-                            {/* Top 5 links */}
-                            <div className="mt-2 flex flex-col gap-2">
-                                {renderLinks(top5Links)}
-                            </div>
+                            {/* Top 3 Finalist section: hidden until the admin sets the finalists */}
+                            {finalistsSet && (
+                                <>
+                                    <SidebarHeader label="Top 3 Finalist" />
+                                    <div className="mt-2 flex flex-col gap-2">
+                                        {renderLinks(top5Links)}
+                                    </div>
+                                </>
+                            )}
 
                             {/* Admin-only management links */}
                             {user?.role === "admin" && (
@@ -272,13 +275,16 @@ export default function SidebarMain({ children }) {
                                     ),
                                     href: "#",
                                     icon: (
-                                        <img
-                                            src="/isu-logo.png"
-                                            className="h-7 w-7 shrink-0 rounded-full"
-                                            width={50}
-                                            height={50}
-                                            alt="Avatar"
-                                        />
+                                        <picture className="contents">
+                                            <source srcSet="/isu-logo.webp" type="image/webp" />
+                                            <img
+                                                src="/isu-logo.png"
+                                                className="h-7 w-7 shrink-0 rounded-full"
+                                                width={50}
+                                                height={50}
+                                                alt="Avatar"
+                                            />
+                                        </picture>
                                     ),
                                     onClick: (e) => {
                                         e.preventDefault();

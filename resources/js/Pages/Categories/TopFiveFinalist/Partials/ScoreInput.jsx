@@ -38,27 +38,34 @@ const ScoreInput = ({ value, onChange, max, disabled = false }) => {
                 onMouseEnter={() => setHovered(true)}
                 onMouseLeave={() => setHovered(false)}
             >
-                <motion.div
-                    className="absolute inset-0 rounded-full"
-                    style={{ filter: "blur(3px)" }}
-                    animate={{
-                        background:
-                            hovered || focused
-                                ? [
-                                      movingMap.TOP,
-                                      movingMap.LEFT,
-                                      movingMap.BOTTOM,
-                                      movingMap.RIGHT,
-                                      movingMap.TOP,
-                                  ]
-                                : highlight,
-                    }}
-                    transition={{
-                        ease: "linear",
-                        duration: 4,
-                        repeat: Infinity,
-                    }}
-                />
+                {/* The moving glow only runs while hovered or focused. Idle boxes get a
+                    still glow: a dozen blurred gradients repainting every frame lagged
+                    judges' phones. */}
+                {hovered || focused ? (
+                    <motion.div
+                        className="absolute inset-0 rounded-full"
+                        style={{ filter: "blur(3px)" }}
+                        animate={{
+                            background: [
+                                movingMap.TOP,
+                                movingMap.LEFT,
+                                movingMap.BOTTOM,
+                                movingMap.RIGHT,
+                                movingMap.TOP,
+                            ],
+                        }}
+                        transition={{
+                            ease: "linear",
+                            duration: 4,
+                            repeat: Infinity,
+                        }}
+                    />
+                ) : (
+                    <div
+                        className="absolute inset-0 rounded-full"
+                        style={{ filter: "blur(3px)", background: highlight }}
+                    />
+                )}
                 {!focused && (
                     <div className="absolute inset-0 rounded-full bg-neutral-900/20" />
                 )}

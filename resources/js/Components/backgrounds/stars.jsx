@@ -24,7 +24,7 @@ function StarLayer({ count = 1000, size = 1, transition, starColor }) {
         <motion.div
             animate={{ y: [0, -2000] }}
             transition={transition}
-            className="absolute top-0 left-0 w-full h-[2000px]"
+            className="absolute top-0 left-0 w-full h-[2000px] will-change-transform"
         >
             <div
                 className="absolute bg-transparent rounded-full"
@@ -72,8 +72,10 @@ export default function StarsBackground({
                 style={{ x: springX, y: springY }}
                 className={cn({ "pointer-events-none": !pointerEvents })}
             >
+                {/* Star counts were 1000/400/200; each is painted twice per layer, and
+                    thousands of box-shadows lagged phones and older laptops. */}
                 <StarLayer
-                    count={1000}
+                    count={350}
                     size={1}
                     transition={{
                         repeat: Infinity,
@@ -83,7 +85,7 @@ export default function StarsBackground({
                     starColor={starColor}
                 />
                 <StarLayer
-                    count={400}
+                    count={140}
                     size={2}
                     transition={{
                         repeat: Infinity,
@@ -93,7 +95,7 @@ export default function StarsBackground({
                     starColor={starColor}
                 />
                 <StarLayer
-                    count={200}
+                    count={70}
                     size={3}
                     transition={{
                         repeat: Infinity,

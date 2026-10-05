@@ -31,7 +31,7 @@ class SetTopThreeTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)
-            ->post('/top-five', ['candidate_ids' => [...array_slice($female, 0, 3), ...array_slice($male, 0, 3)]])
+            ->post('/top-five', ['password' => 'password', 'candidate_ids' => [...array_slice($female, 0, 3), ...array_slice($male, 0, 3)]])
             ->assertSessionHasNoErrors();
 
         $this->assertSame(6, TopFiveCandidates::count());
@@ -44,7 +44,7 @@ class SetTopThreeTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)
-            ->post('/top-five', ['candidate_ids' => [...$female, ...$male]])
+            ->post('/top-five', ['password' => 'password', 'candidate_ids' => [...$female, ...$male]])
             ->assertSessionHasErrors('candidate_ids');
 
         $this->assertSame(0, TopFiveCandidates::count());
@@ -56,11 +56,11 @@ class SetTopThreeTest extends TestCase
         $male = $this->candidates('male', 3);
         $admin = User::factory()->create(['role' => 'admin']);
 
-        $this->actingAs($admin)->post('/top-five', ['candidate_ids' => [...array_slice($female, 0, 3), ...$male]]);
+        $this->actingAs($admin)->post('/top-five', ['password' => 'password', 'candidate_ids' => [...array_slice($female, 0, 3), ...$male]]);
         $kept = TopFiveCandidates::where('candidate_id', $female[0])->value('id');
 
         // Swap the 3rd female finalist for the 4th.
-        $this->actingAs($admin)->post('/top-five', ['candidate_ids' => [$female[0], $female[1], $female[3], ...$male]]);
+        $this->actingAs($admin)->post('/top-five', ['password' => 'password', 'candidate_ids' => [$female[0], $female[1], $female[3], ...$male]]);
 
         $this->assertSame($kept, TopFiveCandidates::where('candidate_id', $female[0])->value('id'));
         $this->assertFalse(TopFiveCandidates::where('candidate_id', $female[2])->exists());

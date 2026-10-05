@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useForm } from "@inertiajs/react";
 import { toast } from "sonner";
-import { Pencil, UserPlus } from "lucide-react";
+import { AlertTriangle, Pencil, Trash2, UserPlus } from "lucide-react";
 import PageLayout from "@/Layouts/PageLayout";
 import Modal from "@/Components/Modal";
 import InputLabel from "@/Components/InputLabel";
@@ -154,9 +154,103 @@ const JudgeFormModal = ({ judge, show, onClose }) => {
     );
 };
 
+// Asks for the admin's password before deleting a judge, and spells out that
+// the judge's scores are deleted with them.
+const DeleteJudgeModal = ({ judge, onClose }) => {
+    const { data, setData, delete: destroy, processing, errors, reset, clearErrors } =
+        useForm({ password: "" });
+
+    const close = () => {
+        reset();
+        clearErrors();
+        onClose();
+    };
+
+    const submit = (e) => {
+        e.preventDefault();
+
+        destroy(route("admin.judges.destroy", judge.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(`${judge.name} was deleted.`);
+                close();
+            },
+            onError: () => reset("password"),
+        });
+    };
+
+    const scores = judge.score_count ?? 0;
+
+    return (
+        <Modal show onClose={close} maxWidth="md">
+            <form onSubmit={submit} className="bg-neutral-900 text-white p-6">
+                <h2 className="flex items-center gap-2 text-lg font-semibold">
+                    <AlertTriangle className="h-5 w-5 text-red-400" aria-hidden="true" />
+                    Delete {judge.name}?
+                </h2>
+
+                <p className="mt-3 text-sm text-neutral-300">
+                    Their account ({judge.email}) will be removed and they won't be able
+                    to log in.
+                </p>
+                <p
+                    className={`mt-2 text-sm ${
+                        scores > 0 ? "font-medium text-red-300" : "text-neutral-400"
+                    }`}
+                >
+                    {scores > 0
+                        ? `All ${scores} of their score ${
+                              scores === 1 ? "entry" : "entries"
+                          } will also be deleted, and results will be recalculated over the remaining judges.`
+                        : "They haven't submitted any scores."}{" "}
+                    This can't be undone.
+                </p>
+
+                <div className="mt-5">
+                    <InputLabel
+                        htmlFor="delete-judge-password"
+                        value="Enter your password to confirm"
+                        className="!text-neutral-300"
+                    />
+                    <TextInput
+                        id="delete-judge-password"
+                        type="password"
+                        value={data.password}
+                        onChange={(e) => setData("password", e.target.value)}
+                        className={inputClass}
+                        autoComplete="current-password"
+                        isFocused
+                        required
+                    />
+                    <InputError message={errors.password} className="mt-1" />
+                </div>
+
+                <div className="mt-6 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        onClick={close}
+                        className="px-4 py-2 rounded-lg border border-neutral-600 bg-neutral-800 hover:bg-neutral-700 font-semibold"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={processing || !data.password}
+                        className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 font-semibold disabled:opacity-50"
+                    >
+                        {processing ? "Deleting…" : "Delete Judge"}
+                    </button>
+                </div>
+            </form>
+        </Modal>
+    );
+};
+
 const JudgesIndex = ({ judges = [] }) => {
     // null = closed, "new" = add form, or the judge being edited.
     const [editing, setEditing] = useState(null);
+    // The judge waiting for delete confirmation, or null.
+    const [deleting, setDeleting] = useState(null);
 
     return (
         <PageLayout>
@@ -206,14 +300,25 @@ const JudgesIndex = ({ judges = [] }) => {
                                         {judge.email}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <button
-                                            type="button"
-                                            onClick={() => setEditing(judge)}
-                                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-neutral-600 bg-neutral-800 hover:bg-neutral-700 text-sm"
-                                        >
-                                            <Pencil className="h-4 w-4" />
-                                            Edit
-                                        </button>
+                                        <div className="inline-flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditing(judge)}
+                                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-neutral-600 bg-neutral-800 hover:bg-neutral-700 text-sm"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                                Edit
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setDeleting(judge)}
+                                                aria-label={`Delete ${judge.name}`}
+                                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-500/50 bg-red-500/10 text-red-300 hover:bg-red-500/20 text-sm"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                                Delete
+                                            </button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -228,6 +333,14 @@ const JudgesIndex = ({ judges = [] }) => {
                     judge={editing === "new" ? null : editing}
                     show
                     onClose={() => setEditing(null)}
+                />
+            )}
+
+            {deleting && (
+                <DeleteJudgeModal
+                    key={deleting.id}
+                    judge={deleting}
+                    onClose={() => setDeleting(null)}
                 />
             )}
         </PageLayout>

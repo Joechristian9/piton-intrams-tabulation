@@ -23,3 +23,21 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Compress text responses (pages, JSON, JS, CSS, SVG). Needs mod_deflate enabled
+# in Apache's httpd.conf; skipped silently when it isn't.
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+# Browser caching for static files, so judges' devices don't re-download them on
+# every page. Vite build files have a content hash in their name and never change.
+# Photos and logos keep their names when replaced, so they get a shorter cache.
+<IfModule mod_headers.c>
+    <If "%{REQUEST_URI} =~ m#/build/assets/#">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </If>
+    <ElseIf "%{REQUEST_URI} =~ m#\.(webp|jpe?g|png|ico|woff2?)$#i">
+        Header set Cache-Control "public, max-age=3600"
+    </ElseIf>
+</IfModule>

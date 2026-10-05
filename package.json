@@ -4,7 +4,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "images": "node scripts/optimize-images.mjs"
     },
     "devDependencies": {
         "@headlessui/react": "^2.0.0",
@@ -19,10 +20,13 @@
         "postcss": "^8.4.31",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
+        "sharp": "^0.35.5",
         "tailwindcss": "^3.2.1",
         "vite": "^7.0.7"
     },
     "dependencies": {
+        "@fontsource/figtree": "^5.3.0",
+        "@fontsource/orbitron": "^5.3.0",
         "@radix-ui/react-alert-dialog": "^1.1.15",
         "@radix-ui/react-slot": "^1.2.3",
         "@radix-ui/react-tabs": "^1.1.13",

@@ -1,6 +1,7 @@
-// Optimized candidate photo. The local photos (public/candidates/<gender>/<n>.jpg,
-// ~250 KB each at 1365x2048) have WebP versions next to them: <n>.webp (480px wide,
-// ~22 KB) for cards and <n>-thumb.webp (96px square, ~2 KB) for avatars. Browsers
+// Optimized candidate photo. The local photos (public/candidates/<gender>/<n>.jpg or
+// .JPEG, ~220 KB each, at most 1365x2048) have WebP versions next to them: <n>.webp
+// (480px wide, ~25 KB) for cards and <n>-thumb.webp (96px square, ~2 KB) for avatars.
+// `npm run images` regenerates them after photos are added or replaced. Browsers
 // that support WebP get those; anything else, or any other path, uses the original.
 const LOCAL_PHOTO = /^candidates\/(male|female)\/(\d+)\.jpe?g$/i;
 
