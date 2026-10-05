@@ -6,12 +6,8 @@ import Modal from "@/Components/Modal";
 import PasswordConfirmDialog from "@/Components/PasswordConfirmDialog";
 import Settings from "./Tabs/Settings";
 import usePasswordAction from "./usePasswordAction";
+import { STATUS_STYLES } from "@/lib/eventStatus";
 
-export const STATUS_STYLES = {
-    setup: "bg-neutral-700 text-gray-200",
-    live: "bg-green-500/20 text-green-300",
-    closed: "bg-neutral-800 text-gray-400",
-};
 
 const button =
     "inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-600 bg-neutral-800 px-3 text-sm hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 disabled:cursor-not-allowed disabled:opacity-40";

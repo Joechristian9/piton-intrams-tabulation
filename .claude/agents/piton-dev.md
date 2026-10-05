@@ -212,6 +212,13 @@ Top 3 finalists, and print signed result sheets.
   candidate added mid-event can still be scored). Tested with Node's runner:
   `npm run test:js` (`tests/js/*.test.mjs`). The page clears drafts only when the response is
   the scoring page; a closed event redirects straight to the dashboard with the error.
+- **A page must never import another page** (e.g. `Edit.jsx` importing from `Index.jsx`): Vite
+  folds the imported page into the importer and drops it from the build manifest, so the
+  server 500s ("Unable to locate file in Vite manifest"). Put shared code in `lib/`,
+  `Components/`, `Partials/` or `Tabs/`. Guarded by `tests/js/pages.test.mjs`. PHP tests use
+  `withoutVite()` and can't catch this — after building, open the pages for real.
+- Event #1 was migrated on the real database on 2026-10-05 (backups
+  `database/backups/piton-2026-10-05_125401.sqlite` before, `…_125415.sqlite` just before import).
 - Routes are cached too: clear them (`php artisan route:clear`) before tests after route
   changes, then `php artisan optimize` when done.
 - `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):

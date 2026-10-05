@@ -9,7 +9,7 @@ import Categories from "./Tabs/Categories";
 import Candidates from "./Tabs/Candidates";
 import Judges from "./Tabs/Judges";
 import usePasswordAction from "./usePasswordAction";
-import { STATUS_STYLES } from "./Index";
+import { STATUS_STYLES } from "@/lib/eventStatus";
 
 // Event setup tabs.
 const TABS = [
