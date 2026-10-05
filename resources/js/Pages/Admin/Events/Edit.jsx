@@ -4,11 +4,17 @@ import { ArrowLeft, Play, Square } from "lucide-react";
 import PageLayout from "@/Layouts/PageLayout";
 import PasswordConfirmDialog from "@/Components/PasswordConfirmDialog";
 import Settings from "./Tabs/Settings";
+import Groups from "./Tabs/Groups";
+import Categories from "./Tabs/Categories";
 import usePasswordAction from "./usePasswordAction";
 import { STATUS_STYLES } from "./Index";
 
 // Tabs added as each part of event setup exists.
-const TABS = [["settings", "Settings"]];
+const TABS = [
+    ["settings", "Settings"],
+    ["groups", "Groups"],
+    ["categories", "Categories"],
+];
 
 const readTab = () => {
     try {
@@ -99,6 +105,8 @@ export default function Edit(props) {
 
                 <div role="tabpanel" className="max-w-3xl">
                     {tab === "settings" && <Settings event={event} locks={locks} />}
+                    {tab === "groups" && <Groups event={event} groups={props.groups} />}
+                    {tab === "categories" && <Categories event={event} categories={props.categories} locks={locks} />}
                 </div>
             </div>
 

@@ -233,6 +233,11 @@ Top 3 finalists, and print signed result sheets.
   rounds/finals settings once scored, Top N once finalists set, code once judges exist; delete
   only without scores. Duplicate copies settings, groups and categories. Uploaded photos use
   the `uploads` disk (`public/uploads`, no storage:link).
+- Groups/categories: `Admin\GroupController` (`admin.groups.*`; names unique per event; can't
+  delete a group with candidates) and `Admin\CategoryController` (`admin.categories.*`; max
+  0.01–999.99; a scored category keeps its max/round and can't be deleted; a round with scores
+  takes no new categories). Setup tabs `Pages/Admin/Events/Tabs/{Groups,Categories}.jsx` use
+  `Tabs/request.js` (`send(method, url, data, toast, then)` — chain dependent requests).
 - Routes are cached too: clear them (`php artisan route:clear`) before tests after route
   changes, then `php artisan optimize` when done.
 - `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):
