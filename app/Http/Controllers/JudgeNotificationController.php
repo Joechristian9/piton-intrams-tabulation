@@ -9,6 +9,7 @@ use App\Models\TopFiveSelectionScore;
 use App\Models\User;
 use App\Support\Criteria;
 use App\Support\JudgeCallFeed;
+use App\Support\LiveVersions;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -68,7 +69,10 @@ class JudgeNotificationController extends Controller
     {
         abort_unless($request->user()->role === 'judge', 403);
 
-        return response()->json(JudgeCallFeed::forJudge($request->user()->id));
+        return response()->json([
+            ...JudgeCallFeed::forJudge($request->user()->id),
+            'live' => LiveVersions::all(),
+        ]);
     }
 
     /**

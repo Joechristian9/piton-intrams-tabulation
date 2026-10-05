@@ -33,12 +33,17 @@ export default function Dashboard({ auth }) {
 
                 {/* 🌟 Centered content */}
                 <div className="relative z-10 flex flex-col items-center justify-center h-full space-y-4 text-center text-white">
-                    <img
-                        src="/PITON LOGO.png"
-                        alt="PITON Logo"
-                        className="w-32 h-32 object-contain
-                            [filter:drop-shadow(0_0_6px_rgba(250,204,21,0.6))_drop-shadow(0_0_12px_rgba(250,204,21,0.4))_drop-shadow(0_0_20px_rgba(250,204,21,0.2))]"
-                    />
+                    <picture className="contents">
+                        <source srcSet="/piton-logo.webp" type="image/webp" />
+                        <img
+                            src="/PITON%20LOGO.png"
+                            alt="PITON Logo"
+                            width={128}
+                            height={128}
+                            className="w-32 h-32 object-contain
+                                [filter:drop-shadow(0_0_6px_rgba(250,204,21,0.6))_drop-shadow(0_0_12px_rgba(250,204,21,0.4))_drop-shadow(0_0_20px_rgba(250,204,21,0.2))]"
+                        />
+                    </picture>
 
                     <h1 className="text-3xl md:text-4xl font-extrabold text-yellow-400 drop-shadow-[0_0_10px_rgba(255,255,0,0.7)] tracking-wide font-sans">
                         Philippine Information Technology of the North

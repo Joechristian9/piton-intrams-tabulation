@@ -37,11 +37,15 @@ return [
             'database' => env('DB_DATABASE', database_path('database.sqlite')),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
-            'busy_timeout' => null,
+            // Two judges saving at the same moment: wait up to 5 s for the write lock
+            // instead of failing with "database is locked".
+            'busy_timeout' => env('DB_BUSY_TIMEOUT', 5000),
             // WAL: admins' result pages keep reading while judges are saving.
             'journal_mode' => env('DB_JOURNAL_MODE', 'wal'),
             'synchronous' => env('DB_SYNCHRONOUS', 'normal'),
-            'transaction_mode' => 'DEFERRED',
+            // IMMEDIATE takes the write lock when a transaction starts, so the busy
+            // timeout applies; DEFERRED read-then-write transactions could fail at once.
+            'transaction_mode' => 'IMMEDIATE',
         ],
 
         'mysql' => [

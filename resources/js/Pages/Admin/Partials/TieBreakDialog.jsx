@@ -159,7 +159,7 @@ const TieBreakDialog = ({ plan, onCancel, onConfirm }) => {
                         disabled={!ready}
                         className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Confirm Top {FINALIST_COUNT}
+                        Continue
                     </button>
                 </AlertDialogFooter>
             </AlertDialogContent>

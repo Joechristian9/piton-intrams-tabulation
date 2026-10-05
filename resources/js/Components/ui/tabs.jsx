@@ -10,15 +10,15 @@ export const Tabs = ({
     tabClassName,
     contentClassName,
 }) => {
-    const [active, setActive] = useState(propTabs[0]);
-    const [tabs, setTabs] = useState(propTabs);
+    // Only the active tab's value is kept in state; its content always comes from the
+    // latest props, so live updates (router.reload) show fresh data. Storing the tab
+    // objects themselves froze the content at the first render.
+    const [activeValue, setActiveValue] = useState(propTabs[0].value);
+    const active = propTabs.find((tab) => tab.value === activeValue) ?? propTabs[0];
+    const tabs = [active, ...propTabs.filter((tab) => tab !== active)];
 
     const moveSelectedTabToTop = (idx) => {
-        const newTabs = [...propTabs];
-        const selectedTab = newTabs.splice(idx, 1);
-        newTabs.unshift(selectedTab[0]);
-        setTabs(newTabs);
-        setActive(newTabs[0]);
+        setActiveValue(propTabs[idx].value);
     };
 
     const [hovering, setHovering] = useState(false);

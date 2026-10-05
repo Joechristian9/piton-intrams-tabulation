@@ -2,6 +2,8 @@ import { Head, Link } from "@inertiajs/react";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, LayoutDashboard, LogIn } from "lucide-react";
 import PitonBackdrop from "@/Components/PitonBackdrop";
+import "@fontsource/orbitron/700.css";
+import "@fontsource/orbitron/900.css";
 
 const focusRing =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
@@ -41,10 +43,6 @@ export default function Welcome({ auth }) {
                 <meta
                     name="description"
                     content="PITON Tabulation System by the Philippine Information Technology of the North."
-                />
-                <link
-                    rel="stylesheet"
-                    href="https://fonts.bunny.net/css?family=orbitron:700,900&display=swap"
                 />
                 <link rel="preload" as="image" type="image/webp" href="/piton-logo.webp" />
             </Head>

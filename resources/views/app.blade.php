@@ -12,9 +12,8 @@
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
         <meta name="theme-color" content="#000000">
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        {{-- Fonts are bundled by Vite (@fontsource in app.jsx), not loaded from the
+             internet, so pages don't stall when the event network is offline. --}}
 
         <!-- Scripts -->
         @routes

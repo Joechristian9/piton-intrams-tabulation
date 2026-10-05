@@ -1,16 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, router, usePage } from "@inertiajs/react";
 import axios from "axios";
 import { toast } from "sonner";
 import { ArrowRight, BellRing, X } from "lucide-react";
+import { JUDGE_TOPICS, isStale, reloadPage } from "@/lib/liveVersions";
 
 // Highest notification id already toasted in this browser tab. Module level, so
 // moving between pages doesn't repeat a toast.
 let lastToastedId = null;
 
-const POLL_MS = 4000;
+const POLL_MS = 3000;
 
 const dismissedKey = (userId) => `piton-dismissed-calls:${userId}`;
 
@@ -37,6 +38,10 @@ export default function JudgeNotifications() {
     const user = props.auth?.user;
     const isJudge = user?.role === "judge";
 
+    // Version stamps the current page was built with (see lib/liveVersions.js).
+    const liveRef = useRef(props.live);
+    liveRef.current = props.live;
+
     const [events, setEvents] = useState([]);
     const [dismissed, setDismissed] = useState(() => (isJudge ? readDismissed(user.id) : []));
 
@@ -54,11 +59,29 @@ export default function JudgeNotifications() {
     useEffect(() => {
         if (!isJudge) return;
 
+        let timer = null;
+        let inFlight = false;
+        let stopped = false;
+
+        // The next check is scheduled only after the previous one finishes, so a
+        // slow server never gets a pile-up of overlapping requests.
+        const schedule = () => {
+            clearTimeout(timer);
+            if (!stopped) timer = setTimeout(check, POLL_MS);
+        };
+
         const check = async () => {
-            if (document.hidden) return;
+            if (document.hidden || inFlight) return schedule();
+            inFlight = true;
 
             try {
-                const { data } = await axios.get(route("judge.notifications"));
+                const { data } = await axios.get(route("judge.notifications"), {
+                    timeout: 10000,
+                });
+
+                // The admin set or changed the finalists: refresh this page's data.
+                if (isStale(data.live, liveRef.current, JUDGE_TOPICS)) reloadPage();
+
                 // Only re-render when the list actually changed (most polls return the same).
                 setEvents((current) =>
                     current.length === data.events.length &&
@@ -90,15 +113,18 @@ export default function JudgeNotifications() {
                 lastToastedId = Math.max(lastToastedId ?? 0, data.seq);
             } catch {
                 // Network hiccup; try again on the next tick.
+            } finally {
+                inFlight = false;
+                schedule();
             }
         };
 
         check();
-        const timer = setInterval(check, POLL_MS);
         document.addEventListener("visibilitychange", check);
 
         return () => {
-            clearInterval(timer);
+            stopped = true;
+            clearTimeout(timer);
             document.removeEventListener("visibilitychange", check);
         };
     }, [isJudge, dismiss]);

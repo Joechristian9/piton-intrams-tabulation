@@ -109,6 +109,8 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
         ->name('admin.judges.store');
     Route::put('/admin/judges/{judge}', [JudgeController::class, 'update'])
         ->name('admin.judges.update');
+    Route::delete('/admin/judges/{judge}', [JudgeController::class, 'destroy'])
+        ->name('admin.judges.destroy');
 
     Route::get('/admin/notify-judges', [JudgeNotificationController::class, 'index'])
         ->name('admin.notify_judges');

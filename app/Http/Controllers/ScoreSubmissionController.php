@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\LiveVersions;
 use App\Support\ScoreSubmissionFeed;
 use Illuminate\Http\Request;
 
@@ -16,8 +17,9 @@ class ScoreSubmissionController extends Controller
 
         $after = $request->query('after');
 
-        return response()->json(
-            ScoreSubmissionFeed::since($after === null ? null : (int) $after)
-        );
+        return response()->json([
+            ...ScoreSubmissionFeed::since($after === null ? null : (int) $after),
+            'live' => LiveVersions::all(),
+        ]);
     }
 }

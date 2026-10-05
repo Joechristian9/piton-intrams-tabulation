@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\TopFiveSelectionService;
 use App\Models\Candidate;
 use App\Models\TopFiveCandidates;
+use App\Support\LiveVersions;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -96,7 +97,12 @@ class TopFiveSelectionResultController extends Controller
 
     public function setTopFive(Request $request)
     {
+        // Setting the finalists closes Round 1 for good: admins only, and they must
+        // re-enter their own account password to confirm.
+        abort_unless($request->user()->role === 'admin', 403);
+
         $request->validate([
+            'password' => ['required', 'current_password'],
             'candidate_ids' => 'required|array',
             'candidate_ids.*' => 'distinct|exists:candidates,id',
         ]);
@@ -120,6 +126,10 @@ class TopFiveSelectionResultController extends Controller
                 TopFiveCandidates::create(['candidate_id' => $candidateId]);
             }
         });
+
+        // Open judge and admin pages reload: the finals categories appear, and removed
+        // finalists' scores are gone.
+        LiveVersions::bump(LiveVersions::FINALISTS, LiveVersions::SCORES);
 
         return redirect()->back()->with('success', 'Top 3 Male & Female saved successfully!');
     }

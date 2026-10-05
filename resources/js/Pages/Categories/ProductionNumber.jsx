@@ -6,6 +6,7 @@ import PageLayout from "@/Layouts/PageLayout";
 import { Tabs } from "@/Components/ui/tabs";
 import CandidateGrid from "./Partials/CandidateGrid";
 import ScoreAlertDialog from "./Partials/ScoreAlertDialog";
+import RoundClosedNotice from "./Partials/RoundClosedNotice";
 import { toast } from "sonner";
 import {
     loadDraftScores,
@@ -16,7 +17,10 @@ import {
 const DRAFT_CATEGORY = "production_number";
 
 const ProductionNumber = ({ candidates }) => {
-    const judgeId = usePage().props.auth.user.id;
+    const { props } = usePage();
+    const judgeId = props.auth.user.id;
+    // Round 1 closes once the admin sets the Top 3: these scores can no longer change.
+    const roundClosed = Boolean(props.finalistsSet);
     const maleCandidates = candidates.filter((c) => c.gender === "male");
     const femaleCandidates = candidates.filter((c) => c.gender === "female");
 
@@ -32,11 +36,20 @@ const ProductionNumber = ({ candidates }) => {
             setRerender((r) => r + 1);
         };
 
-        const allScoresFilled = candidates.every(
-            (c) =>
-                scoresRef.current[c.id] !== undefined &&
-                scoresRef.current[c.id] !== ""
-        );
+        // Every candidate in this tab already has a saved score: keep it locked
+        // even when live updates reload the page with fresh data.
+        const alreadySubmitted =
+            candidates.length > 0 &&
+            candidates.every((c) => c.existing_score != null && c.existing_score !== "");
+
+        const allScoresFilled =
+            !alreadySubmitted &&
+            !roundClosed &&
+            candidates.every(
+                (c) =>
+                    scoresRef.current[c.id] !== undefined &&
+                    scoresRef.current[c.id] !== ""
+            );
 
         const handleSubmit = () => {
             const filteredScores = Object.fromEntries(
@@ -72,8 +85,9 @@ const ProductionNumber = ({ candidates }) => {
                         router.reload();
                         setSubmitted(true);
                     },
-                    onError: () => {
-                        toast.error("Failed to submit scores. Check console.");
+                    onError: (errors) => {
+                        // e.g. the admin set the Top 3 while this judge was submitting.
+                        toast.error(errors.scores ?? "Failed to submit scores.");
                     },
                 }
             );
@@ -86,7 +100,7 @@ const ProductionNumber = ({ candidates }) => {
                     maxScore={10}
                     scoresRef={scoresRef}
                     onScoreChange={handleScoreChange}
-                    submitted={submitted}
+                    submitted={submitted || alreadySubmitted || roundClosed}
                 />
 
                 <ScoreAlertDialog
@@ -94,7 +108,7 @@ const ProductionNumber = ({ candidates }) => {
                     scoresRef={scoresRef}
                     allScoresFilled={allScoresFilled}
                     handleSubmit={handleSubmit}
-                    submitted={submitted}
+                    submitted={submitted || alreadySubmitted || roundClosed}
                 />
             </div>
         );
@@ -119,6 +133,7 @@ const ProductionNumber = ({ candidates }) => {
         <PageLayout>
             <div className="w-full relative my-10 px-4 flex flex-col items-center">
                 <div className="w-full max-w-8xl">
+                    {roundClosed && <RoundClosedNotice />}
                     <Tabs tabs={tabs} />
                 </div>
             </div>

@@ -34,11 +34,19 @@ const OverallAppeal = ({ candidates }) => {
             setRerender((r) => r + 1);
         };
 
-        const allScoresFilled = candidates.every(
-            (c) =>
-                scoresRef.current[c.candidate_id] !== undefined &&
-                scoresRef.current[c.candidate_id] !== ""
-        );
+        // Every candidate in this tab already has a saved score: keep it locked
+        // even when live updates reload the page with fresh data.
+        const alreadySubmitted =
+            candidates.length > 0 &&
+            candidates.every((c) => c.has_existing_score?.overall_appeal != null);
+
+        const allScoresFilled =
+            !alreadySubmitted &&
+            candidates.every(
+                (c) =>
+                    scoresRef.current[c.candidate_id] !== undefined &&
+                    scoresRef.current[c.candidate_id] !== ""
+            );
 
         const handleSubmit = () => {
             const filteredScores = Object.fromEntries(
@@ -89,7 +97,7 @@ const OverallAppeal = ({ candidates }) => {
                     maxScore={10}
                     scoresRef={scoresRef}
                     onScoreChange={handleScoreChange}
-                    submitted={submitted}
+                    submitted={submitted || alreadySubmitted}
                     categoryField="overall_appeal"
                 />
 
@@ -98,7 +106,7 @@ const OverallAppeal = ({ candidates }) => {
                     scoresRef={scoresRef}
                     allScoresFilled={allScoresFilled}
                     handleSubmit={handleSubmit}
-                    submitted={submitted}
+                    submitted={submitted || alreadySubmitted}
                     categoryField="overall_appeal"
                 />
             </div>
