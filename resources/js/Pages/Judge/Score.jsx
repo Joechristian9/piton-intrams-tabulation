@@ -13,6 +13,7 @@ import {
     saveDraftScores,
     clearDraftScores,
 } from "@/lib/scoreDrafts";
+import { canSubmit, isLocked, scoresToSubmit } from "@/lib/scoreSheet";
 
 // One group's candidates for this category. Defined outside the page so live
 // reloads update it in place instead of remounting every card.
@@ -26,23 +27,23 @@ function GroupTab({ candidates, category, judgeId, draftKey, scoresRef, roundClo
         setRerender((r) => r + 1);
     };
 
-    // Every candidate here already has a saved score: keep the tab locked.
-    const alreadySubmitted =
-        candidates.length > 0 && candidates.every((c) => c.existing_score != null);
-
-    const filled = (c) => scoresRef.current[c.id] !== undefined && scoresRef.current[c.id] !== "";
-    const allScoresFilled =
-        !alreadySubmitted && !roundClosed && candidates.length > 0 && candidates.every(filled);
+    // Saved scores count as filled, so a candidate added after this judge's first
+    // submit can still be scored (lib/scoreSheet.js).
+    const alreadySubmitted = isLocked(candidates);
+    const allScoresFilled = canSubmit(candidates, scoresRef.current, { roundClosed });
 
     const handleSubmit = () => {
-        const scores = Object.fromEntries(candidates.map((c) => [c.id, scoresRef.current[c.id]]));
+        const scores = scoresToSubmit(candidates, scoresRef.current);
 
         router.post(
             route("score.store", category.id),
             { scores },
             {
                 preserveScroll: true,
-                onSuccess: () => {
+                onSuccess: (page) => {
+                    // Only a scoring page back means it was saved; e.g. a closed event
+                    // lands on the waiting page instead, and drafts must be kept.
+                    if (page.component !== "Judge/Score") return;
                     clearDraftScores(draftKey, judgeId, Object.keys(scores));
                     toast.success("Scores submitted successfully!");
                     setSubmitted(true);

@@ -71,7 +71,11 @@ class ScoringController extends Controller
         ]);
 
         if (! $event->isLive()) {
-            throw ValidationException::withMessages(['scores' => "This event isn't running right now."]);
+            // Straight to the landing page: redirecting back to the scoring page would
+            // bounce again (it isn't shown for a closed event) and lose the error, and
+            // the browser would then treat the submit as a success.
+            return redirect()->route('dashboard')
+                ->withErrors(['scores' => "This event isn't running right now."]);
         }
 
         if ($category->round === 1 && $event->finalistsSet()) {

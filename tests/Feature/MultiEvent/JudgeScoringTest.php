@@ -105,6 +105,27 @@ class JudgeScoringTest extends TestCase
         $this->assertSame(0, Score::count());
     }
 
+    /**
+     * Final review: the browser follows the redirects, so the error must survive
+     * to the page the judge ends up on (the waiting page), or the client treats
+     * the submit as a success and clears the judge's drafts.
+     */
+    public function test_closed_event_error_reaches_the_page_the_judge_lands_on(): void
+    {
+        $f = $this->addCandidate($this->event, 'Female', 1);
+        $category = $this->category($this->event, 'Sports Wear');
+        $this->event->update(['status' => Event::CLOSED]);
+
+        $this->actingAs($this->judge)
+            ->from(route('score.show', $category))
+            ->followingRedirects()
+            ->post(route('score.store', $category), ['scores' => [$f->id => 20]])
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Judge/Waiting')
+                ->where('errors.scores', "This event isn't running right now."));
+        $this->assertSame(0, Score::count());
+    }
+
     public function test_category_of_another_event_is_404(): void
     {
         $other = $this->makeEvent(['status' => Event::LIVE]);

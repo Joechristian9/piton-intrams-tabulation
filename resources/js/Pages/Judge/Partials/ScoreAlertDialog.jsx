@@ -84,7 +84,7 @@ const ScoreAlertDialog = ({
                                         </div>
                                     </td>
                                     <td className="p-2 border-b border-gray-600 text-center">
-                                        {scoresRef.current[c.id]}
+                                        {scoresRef.current[c.id] ?? c.existing_score}
                                     </td>
                                 </tr>
                             ))}

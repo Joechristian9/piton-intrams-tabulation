@@ -203,6 +203,11 @@ Top 3 finalists, and print signed result sheets.
   `migrate` never runs. Only with the user's go-ahead, between events: `php artisan db:backup`,
   then `php artisan migrate --path=database/migrations/pending`. After that,
   `events:migrate-legacy` can't run (it needs the old tables).
+- Judge tab submit rules live in `resources/js/lib/scoreSheet.js` (`isLocked`, `canSubmit`,
+  `scoresToSubmit`: saved scores count as filled, only unsaved candidates are sent — so a
+  candidate added mid-event can still be scored). Tested with Node's runner:
+  `npm run test:js` (`tests/js/*.test.mjs`). The page clears drafts only when the response is
+  the scoring page; a closed event redirects straight to the dashboard with the error.
 - Routes are cached too: clear them (`php artisan route:clear`) before tests after route
   changes, then `php artisan optimize` when done.
 - `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):
