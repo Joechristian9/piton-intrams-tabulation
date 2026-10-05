@@ -222,6 +222,11 @@ Top 3 finalists, and print signed result sheets.
   2026-10-05 on a full Event #1: judge poll 0 queries, scoring page 8, admin results 8–10.
   On the judge page `CandidateGrid` renders memoized `CandidateCard`s and `Score.jsx` keeps
   `handleScoreChange` stable (`useCallback`), so typing re-renders one card, not the grid.
+- `php artisan serve` uses the project's `server.php` router (Laravel picks it up when it
+  exists): real files get `Cache-Control` (build assets 1 year immutable; photos/fonts 1 hour
+  + ETag/304) and JS/CSS/SVG are gzipped; everything else goes to `public/index.php`. The bare
+  built-in server sent no caching headers at all. `DevServerTest` starts a real `php -S` with
+  it. Restart `php artisan serve` after changing it.
 - **A page must never import another page** (e.g. `Edit.jsx` importing from `Index.jsx`): Vite
   folds the imported page into the importer and drops it from the build manifest, so the
   server 500s ("Unable to locate file in Vite manifest"). Put shared code in `lib/`,
