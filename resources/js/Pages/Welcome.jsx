@@ -147,7 +147,7 @@ export default function Welcome({ auth }) {
                 </main>
 
                 <footer className="relative z-10 pb-6 text-center text-sm text-gray-400">
-                    &copy; {new Date().getFullYear()} joe-dev
+                    &copy; {new Date().getFullYear()} Darryl, Andrei, Arjay, & Joe
                 </footer>
             </div>
         </>
