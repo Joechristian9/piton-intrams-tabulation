@@ -203,6 +203,13 @@ Top 3 finalists, and print signed result sheets.
 - Formulas live only in `App\Results\Tabulator` (pure); `App\Results\EventResults` loads an
   event. Round 1 lists a group's candidates by number; finals list finalists in the order
   they were set.
+- Judge scoring: `Judge\ScoringController` (`score.show` / `score.store`, `/score/{category}`).
+  Judges only, only their own event's categories (404 otherwise); saves for the logged-in
+  judge via one upsert; rejects when the event isn't live ("This event isn't running right
+  now."), when Round 1 is locked, or when a candidate isn't in the round (round 2 = finalists).
+  Bumps the event's `scores` stamp and pushes the per-event submission feed.
+- Routes are cached too: clear them (`php artisan route:clear`) before tests after route
+  changes, then `php artisan optimize` when done.
 - `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):
   refuses if any event exists or if old score rows came from non-judge accounts, runs
   `db:backup`, imports in a transaction, and commits only if `App\Legacy\Snapshot::diff`

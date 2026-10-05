@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CandidateController;
 use App\Http\Controllers\JudgeController;
 use App\Http\Controllers\JudgeNotificationController;
+use App\Http\Controllers\Judge\ScoringController;
 use App\Http\Controllers\ScoreSubmissionController;
 use App\Http\Controllers\ResultController\TopFiveSelectionResultController;
 use App\Http\Controllers\ResultController\TopFiveCandidateResultController;
@@ -116,6 +117,12 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
         ->name('admin.notify_judges');
     Route::post('/admin/notify-judges', [JudgeNotificationController::class, 'store'])
         ->name('admin.notify_judges.send');
+});
+
+// Multi-event judge scoring: one page per category of the judge's own event
+Route::middleware('auth')->group(function () {
+    Route::get('/score/{category}', [ScoringController::class, 'show'])->name('score.show');
+    Route::post('/score/{category}', [ScoringController::class, 'store'])->name('score.store');
 });
 
 // Judges poll this for notifications from the admin
