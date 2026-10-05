@@ -207,8 +207,10 @@ Top 3 finalists, and print signed result sheets.
   refuses if any event exists or if old score rows came from non-judge accounts, runs
   `db:backup`, imports in a transaction, and commits only if `App\Legacy\Snapshot::diff`
   against `App\Legacy\LegacyResults` (frozen copy of the old formulas, `DB::table` only —
-  never "improve" it) is empty. Run it between events only. Its test uses
-  `DatabaseMigrations` because VACUUM can't run inside RefreshDatabase's transaction.
+  never "improve" it) is empty. Run it between events only. Its test keeps RefreshDatabase
+  but returns [] from `connectionsToTransact()` and runs `migrate:fresh` around each test
+  (VACUUM can't run inside a transaction; `DatabaseMigrations` broke later test files by
+  rolling back the shared in-memory schema).
 
 ## Known issues (project analysis, 2026-10-03) — not yet fixed unless noted
 

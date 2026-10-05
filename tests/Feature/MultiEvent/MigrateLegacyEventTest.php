@@ -9,22 +9,31 @@ use App\Models\Event;
 use App\Models\Finalist;
 use App\Models\Score;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 class MigrateLegacyEventTest extends TestCase
 {
-    // Not RefreshDatabase: the command runs db:backup (VACUUM), which SQLite
-    // refuses inside the transaction RefreshDatabase wraps around each test.
-    use DatabaseMigrations, SeedsLegacyData;
+    use RefreshDatabase, SeedsLegacyData;
 
     private array $backupsBefore = [];
+
+    /**
+     * The command runs db:backup (VACUUM), which SQLite refuses inside the
+     * transaction RefreshDatabase normally wraps each test in. So no wrapping
+     * transaction here; the shared in-memory schema is reset around each test.
+     */
+    protected function connectionsToTransact(): array
+    {
+        return [];
+    }
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->artisan('migrate:fresh');
         $this->backupsBefore = File::glob(database_path('backups/*.sqlite'));
     }
 
@@ -34,6 +43,7 @@ class MigrateLegacyEventTest extends TestCase
         foreach (array_diff(File::glob(database_path('backups/*.sqlite')), $this->backupsBefore) as $file) {
             File::delete($file);
         }
+        $this->artisan('migrate:fresh');
         parent::tearDown();
     }
 
