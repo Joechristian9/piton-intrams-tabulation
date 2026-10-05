@@ -6,6 +6,7 @@ import PasswordConfirmDialog from "@/Components/PasswordConfirmDialog";
 import Settings from "./Tabs/Settings";
 import Groups from "./Tabs/Groups";
 import Categories from "./Tabs/Categories";
+import Candidates from "./Tabs/Candidates";
 import usePasswordAction from "./usePasswordAction";
 import { STATUS_STYLES } from "./Index";
 
@@ -14,6 +15,7 @@ const TABS = [
     ["settings", "Settings"],
     ["groups", "Groups"],
     ["categories", "Categories"],
+    ["candidates", "Candidates"],
 ];
 
 const readTab = () => {
@@ -107,6 +109,7 @@ export default function Edit(props) {
                     {tab === "settings" && <Settings event={event} locks={locks} />}
                     {tab === "groups" && <Groups event={event} groups={props.groups} />}
                     {tab === "categories" && <Categories event={event} categories={props.categories} locks={locks} />}
+                    {tab === "candidates" && <Candidates event={event} groups={props.groups} candidates={props.candidates} />}
                 </div>
             </div>
 
