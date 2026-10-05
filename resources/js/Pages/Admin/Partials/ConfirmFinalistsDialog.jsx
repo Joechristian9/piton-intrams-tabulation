@@ -40,7 +40,15 @@ const FinalistList = ({ label, finalists }) => (
  * Last step before saving the Top 3: shows who advances, warns that Round 1 locks,
  * and asks for the admin's password (checked by the server).
  */
-const ConfirmFinalistsDialog = ({ finalists, error, processing, onCancel, onConfirm }) => {
+// groups: [{ label, finalists }] — finalists are ranked result rows.
+const ConfirmFinalistsDialog = ({
+    groups,
+    count = FINALIST_COUNT,
+    error,
+    processing,
+    onCancel,
+    onConfirm,
+}) => {
     const [password, setPassword] = useState("");
     const inputRef = useRef(null);
 
@@ -59,17 +67,18 @@ const ConfirmFinalistsDialog = ({ finalists, error, processing, onCancel, onConf
             <AlertDialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col bg-neutral-900 text-white rounded-lg shadow-lg p-6">
                 <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col gap-4">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Top {FINALIST_COUNT}</AlertDialogTitle>
+                        <AlertDialogTitle>Confirm Top {count}</AlertDialogTitle>
                         <AlertDialogDescription>
                             These candidates advance to the finals. Once saved, Top{" "}
-                            {FINALIST_COUNT} Selection scores are locked and judges can
+                            {count} Selection scores are locked and judges can
                             no longer change them.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
 
                     <div className="min-h-0 flex-1 overflow-y-auto flex flex-col gap-6 pr-1">
-                        <FinalistList label="Female" finalists={finalists.female} />
-                        <FinalistList label="Male" finalists={finalists.male} />
+                        {groups.map((g) => (
+                            <FinalistList key={g.label} label={g.label} finalists={g.finalists} />
+                        ))}
                     </div>
 
                     <div>
@@ -117,7 +126,7 @@ const ConfirmFinalistsDialog = ({ finalists, error, processing, onCancel, onConf
                             disabled={!password || processing}
                             className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {processing ? "Saving…" : `Confirm Top ${FINALIST_COUNT}`}
+                            {processing ? "Saving…" : `Confirm Top ${count}`}
                         </button>
                     </AlertDialogFooter>
                 </form>

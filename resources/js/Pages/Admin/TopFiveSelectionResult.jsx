@@ -70,10 +70,10 @@ const TopFiveSelectionResult = ({
     };
 
     // Ranked rows of the pending finalists, for the confirm dialog.
-    const pendingFinalists = pendingIds && {
-        female: femaleCandidates.filter((c) => pendingIds.includes(c.candidate.id)),
-        male: maleCandidates.filter((c) => pendingIds.includes(c.candidate.id)),
-    };
+    const pendingFinalists = pendingIds && [
+        { label: "Female", finalists: femaleCandidates.filter((c) => pendingIds.includes(c.candidate.id)) },
+        { label: "Male", finalists: maleCandidates.filter((c) => pendingIds.includes(c.candidate.id)) },
+    ];
 
     const handleSetTopThree = () => {
         const plan = {
@@ -138,7 +138,10 @@ const TopFiveSelectionResult = ({
 
             {tiePlan && (
                 <TieBreakDialog
-                    plan={tiePlan}
+                    sections={[
+                        { label: "Female", plan: tiePlan.female },
+                        { label: "Male", plan: tiePlan.male },
+                    ]}
                     onCancel={() => setTiePlan(null)}
                     onConfirm={askToConfirm}
                 />
@@ -146,7 +149,7 @@ const TopFiveSelectionResult = ({
 
             {pendingFinalists && (
                 <ConfirmFinalistsDialog
-                    finalists={pendingFinalists}
+                    groups={pendingFinalists}
                     error={passwordError}
                     processing={processing}
                     onCancel={closeConfirm}
