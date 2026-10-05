@@ -21,7 +21,7 @@ function FieldError({ id, message }) {
 
 export default function Login({ status }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        email: "",
+        login: "",
         password: "",
         remember: false,
     });
@@ -33,7 +33,7 @@ export default function Login({ status }) {
 
         post(route("login"), {
             onFinish: () => reset("password"),
-            // Wrong credentials are reported on the email field; take the user there.
+            // Wrong credentials are reported on the login field; take the user there.
             onError: () => emailRef.current?.focus(),
         });
     };
@@ -62,8 +62,8 @@ export default function Login({ status }) {
 
             <form onSubmit={submit} className="mt-8 space-y-5" noValidate>
                 <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-                        Email
+                    <label htmlFor="login" className="block text-sm font-medium text-gray-300">
+                        Username or email
                     </label>
                     <div className="relative mt-2">
                         <Mail
@@ -72,22 +72,23 @@ export default function Login({ status }) {
                         />
                         <input
                             ref={emailRef}
-                            id="email"
-                            type="email"
-                            name="email"
-                            inputMode="email"
+                            id="login"
+                            type="text"
+                            name="login"
                             autoComplete="username"
+                            autoCapitalize="none"
+                            spellCheck={false}
                             autoFocus
                             required
-                            placeholder="you@example.com"
-                            value={data.email}
-                            onChange={(e) => setData("email", e.target.value)}
-                            aria-invalid={errors.email ? true : undefined}
-                            aria-describedby={errors.email ? "email-error" : undefined}
-                            className={`${inputClass(errors.email)} pr-3`}
+                            placeholder="e.g. pageant26-judge1"
+                            value={data.login}
+                            onChange={(e) => setData("login", e.target.value)}
+                            aria-invalid={errors.login ? true : undefined}
+                            aria-describedby={errors.login ? "login-error" : undefined}
+                            className={`${inputClass(errors.login)} pr-3`}
                         />
                     </div>
-                    <FieldError id="email-error" message={errors.email} />
+                    <FieldError id="login-error" message={errors.login} />
                 </div>
 
                 <div>

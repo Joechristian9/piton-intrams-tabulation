@@ -253,6 +253,8 @@ Top 3 finalists, and print signed result sheets.
   Judges tab + `Pages/Admin/Events/JudgeSlips.jsx` (printable). The old global Judges page,
   `JudgeController` and their tests are gone. A judge changing their own password clears
   the stored copy (`Auth\PasswordController`).
+- Login: field `login` ("Username or email"); `LoginRequest` uses `email` when it contains
+  `@`, otherwise `username`; errors and throttling are keyed on `login`.
 - Routes are cached too: clear them (`php artisan route:clear`) before tests after route
   changes, then `php artisan optimize` when done.
 - `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):
