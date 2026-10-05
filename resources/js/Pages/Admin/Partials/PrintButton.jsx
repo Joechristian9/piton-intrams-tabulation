@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { HoverBorderGradient } from "@/Components/ui/hover-border-gradient";
+import { judgeColumnLabel, signatureNames } from "@/lib/printReport";
 
 // Print-only styles: white page, compact rows so a full table plus the
 // signature lines fit on one landscape A4 page.
@@ -23,7 +24,6 @@ const REPORT_CSS = `
 .pdf-signature-list { display: flex; flex-wrap: wrap; justify-content: space-around; gap: 28px 16px; }
 .pdf-signature { width: 170px; text-align: center; font-size: 11px; }
 .pdf-signature-name { margin-top: 34px; border-top: 1px solid #000; padding-top: 4px; font-weight: 700; text-transform: uppercase; }
-.pdf-signature-role { color: #444; line-height: 1.5; }
 `;
 
 const el = (tag, className, text) => {
@@ -48,6 +48,10 @@ const buildReport = (table, reportTitle, judges) => {
     tableCopy.querySelectorAll("tr").forEach((row) => {
         if (row.className.includes("bg-yellow")) row.classList.add("pdf-top");
     });
+    // Confidentiality: score columns show "Judge n", never the judge's name.
+    tableCopy.querySelectorAll("[data-judge-column]").forEach((cell) => {
+        cell.textContent = judgeColumnLabel(cell.dataset.judgeColumn);
+    });
     report.appendChild(tableCopy);
 
     if (judges.length > 0) {
@@ -56,19 +60,11 @@ const buildReport = (table, reportTitle, judges) => {
             el("div", "pdf-signatures-title", "Judges' Signatures:")
         );
 
+        // Names only, alphabetically, so they can't be matched to the columns.
         const list = el("div", "pdf-signature-list");
-        judges.forEach((judge, index) => {
+        signatureNames(judges).forEach((name) => {
             const block = el("div", "pdf-signature");
-            block.appendChild(
-                el(
-                    "div",
-                    "pdf-signature-name",
-                    judge.name.replaceAll("_", " ")
-                )
-            );
-            block.appendChild(
-                el("div", "pdf-signature-role", `Judge ${index + 1}`)
-            );
+            block.appendChild(el("div", "pdf-signature-name", name));
             list.appendChild(block);
         });
 

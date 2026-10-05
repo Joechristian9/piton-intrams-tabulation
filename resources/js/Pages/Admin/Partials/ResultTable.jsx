@@ -46,10 +46,12 @@ const ResultTable = ({
                         <TableRow>
                             <TableHead>#</TableHead>
                             <TableHead>Candidate</TableHead>
-                            {judgeOrder.map((judge) => (
+                            {judgeOrder.map((judge, index) => (
                                 <TableHead
                                     key={judge.id}
                                     className="text-center"
+                                    // The printed report relabels these "Judge n" (PrintButton).
+                                    data-judge-column={index + 1}
                                 >
                                     {judge.name
                                         .replaceAll("_", " ")

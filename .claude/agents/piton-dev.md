@@ -110,7 +110,11 @@ Top 3 finalists, and print signed result sheets.
   kept per judge in localStorage; calls stay 2 hours.
 - PDF: `Admin/Partials/PrintButton.jsx` builds a white landscape A4 report with one signature
   line per judge; `html2pdf.js` is lazy-loaded. Keep the bottom padding and `pagebreak.avoid`
-  rules (rows and the signature block must never split).
+  rules (rows and the signature block must never split). **Confidentiality:** printed score
+  columns read "Judge 1…n" (headers tagged `data-judge-column` in `ResultTable.jsx`), and the
+  signatures show names only, alphabetically (`lib/printReport.js`, tested in
+  `tests/js/printReport.test.mjs`), so a printout can't link a judge to their scores. The
+  on-screen admin table still shows names.
 - Layout: `Layouts/PageLayout.jsx` + `Components/SidebarMain.jsx`, which renders the
   server-built `nav` prop (`App\Support\Navigation`): judges get their live event's categories
   (finals section only after finalists are set); admins get an event picker and that event's
