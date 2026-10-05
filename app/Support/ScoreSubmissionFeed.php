@@ -3,19 +3,32 @@
 namespace App\Support;
 
 use App\Models\Candidate;
+use App\Models\Category;
+use App\Models\EventGroup;
 use App\Models\User;
 
 /**
- * Recent judge submissions, shown to admins as toast alerts.
+ * Recent judge submissions per event, shown to admins as toast alerts.
  */
 class ScoreSubmissionFeed
 {
-    private static function feed(): EventFeed
+    private static function feed(int $eventId): EventFeed
     {
-        return new EventFeed('score-submission-feed');
+        return new EventFeed("score-submission-feed:{$eventId}");
     }
 
-    public static function push(int $judgeId, string $category, array $candidateIds): void
+    public static function push(Category $category, User $judge, array $candidateIds): void
+    {
+        $groupIds = Candidate::whereIn('id', $candidateIds)->pluck('group_id')->unique();
+        $group = $groupIds->count() === 1 ? EventGroup::find($groupIds->first())?->name . ' ' : '';
+
+        self::feed($category->event_id)->push([
+            'message' => "{$judge->name} submitted {$group}{$category->name} scores",
+        ]);
+    }
+
+    /** @deprecated old single-pageant controllers; removed with them. */
+    public static function pushLegacy(int $judgeId, string $category, array $candidateIds): void
     {
         $judge = User::find($judgeId)?->name ?? 'A judge';
 
@@ -24,15 +37,16 @@ class ScoreSubmissionFeed
 
         $label = Criteria::LABELS[$category] ?? $category;
 
-        self::feed()->push(['message' => "{$judge} submitted {$group}{$label} scores"]);
+        self::feed(LiveVersions::LEGACY)->push(['message' => "{$judge} submitted {$group}{$label} scores"]);
     }
 
     /**
-     * Events newer than $after, plus the latest sequence number.
+     * Events newer than $after, plus the latest sequence number. A first poll
+     * ($after null) returns no backlog.
      */
-    public static function since(?int $after): array
+    public static function since(int $eventId, ?int $after): array
     {
-        $feed = self::feed()->read();
+        $feed = self::feed($eventId)->read();
 
         return [
             'seq' => $feed['seq'],

@@ -37,8 +37,8 @@ class TopFiveScoreController extends Controller
 
         $this->scores->saveScores($judgeId, $category, $scores);
 
-        ScoreSubmissionFeed::push($judgeId, $category, array_keys($scores));
-        LiveVersions::bump(LiveVersions::SCORES);
+        ScoreSubmissionFeed::pushLegacy($judgeId, $category, array_keys($scores));
+        LiveVersions::bump(LiveVersions::LEGACY, LiveVersions::SCORES);
 
         return back();
     }

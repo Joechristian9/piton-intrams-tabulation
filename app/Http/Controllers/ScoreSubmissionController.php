@@ -18,8 +18,8 @@ class ScoreSubmissionController extends Controller
         $after = $request->query('after');
 
         return response()->json([
-            ...ScoreSubmissionFeed::since($after === null ? null : (int) $after),
-            'live' => LiveVersions::all(),
+            ...ScoreSubmissionFeed::since(LiveVersions::LEGACY, $after === null ? null : (int) $after),
+            'live' => LiveVersions::all(LiveVersions::LEGACY),
         ]);
     }
 }

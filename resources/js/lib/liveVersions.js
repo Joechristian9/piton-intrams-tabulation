@@ -5,10 +5,11 @@ import { router } from "@inertiajs/react";
 // shared `live` prop, and the pollers get the current ones. A difference in a topic
 // the page cares about means its data is out of date, so the page reloads itself.
 
-// Judges only need finalist changes (finals pages and the sidebar); reloading their
-// scoring page for anything else would just interrupt them.
-export const JUDGE_TOPICS = ["finalists"];
-export const ADMIN_TOPICS = ["finalists", "judges", "scores"];
+// Stamps are per event. Judges need event changes (status,
+// categories, candidates) and finalist changes; reloading their scoring page when
+// other judges submit would just interrupt them.
+export const JUDGE_TOPICS = ["event", "finalists"];
+export const ADMIN_TOPICS = ["event", "finalists", "scores"];
 
 export function isStale(serverLive, pageLive, topics) {
     if (!serverLive) return false;

@@ -39,7 +39,11 @@ class HandleInertiaRequests extends Middleware
             // The sidebar hides the Top 3 Finalist categories until the admin sets them.
             'finalistsSet' => fn () => $request->user() !== null && TopFiveCandidates::exists(),
             // Version stamps this page was built with; the pollers reload when they change.
-            'live' => fn () => $request->user() ? LiveVersions::all() : null,
+            // Judges: their event. Admins: the old pages' slot until the admin event
+            // context arrives (multi-event plan, Task 10).
+            'live' => fn () => $request->user()
+                ? LiveVersions::all($request->user()->event_id ?? LiveVersions::LEGACY)
+                : null,
         ];
     }
 }

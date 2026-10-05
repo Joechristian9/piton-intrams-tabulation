@@ -71,7 +71,7 @@ class JudgeNotificationController extends Controller
 
         return response()->json([
             ...JudgeCallFeed::forJudge($request->user()->id),
-            'live' => LiveVersions::all(),
+            'live' => LiveVersions::all(LiveVersions::LEGACY),
         ]);
     }
 

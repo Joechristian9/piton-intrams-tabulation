@@ -53,7 +53,7 @@ class JudgeController extends Controller
             $judge->delete();
         });
 
-        LiveVersions::bump(LiveVersions::JUDGES, LiveVersions::SCORES);
+        LiveVersions::bump(LiveVersions::LEGACY, LiveVersions::JUDGES, LiveVersions::SCORES);
 
         return back();
     }
@@ -76,7 +76,7 @@ class JudgeController extends Controller
             'role' => 'judge',
         ])->forceFill(['email_verified_at' => now()])->save();
 
-        LiveVersions::bump(LiveVersions::JUDGES);
+        LiveVersions::bump(LiveVersions::LEGACY, LiveVersions::JUDGES);
 
         return back();
     }
@@ -103,7 +103,7 @@ class JudgeController extends Controller
 
         $judge->save();
 
-        LiveVersions::bump(LiveVersions::JUDGES);
+        LiveVersions::bump(LiveVersions::LEGACY, LiveVersions::JUDGES);
 
         return back();
     }

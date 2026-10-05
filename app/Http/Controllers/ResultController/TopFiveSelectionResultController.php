@@ -129,7 +129,7 @@ class TopFiveSelectionResultController extends Controller
 
         // Open judge and admin pages reload: the finals categories appear, and removed
         // finalists' scores are gone.
-        LiveVersions::bump(LiveVersions::FINALISTS, LiveVersions::SCORES);
+        LiveVersions::bump(LiveVersions::LEGACY, LiveVersions::FINALISTS, LiveVersions::SCORES);
 
         return redirect()->back()->with('success', 'Top 3 Male & Female saved successfully!');
     }

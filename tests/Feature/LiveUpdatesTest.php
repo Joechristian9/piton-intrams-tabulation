@@ -72,8 +72,8 @@ class LiveUpdatesTest extends TestCase
 
     public function test_pages_get_the_stamps_they_were_built_with(): void
     {
-        LiveVersions::bump(LiveVersions::FINALISTS);
-        $stamps = LiveVersions::all();
+        LiveVersions::bump(LiveVersions::LEGACY, LiveVersions::FINALISTS);
+        $stamps = LiveVersions::all(LiveVersions::LEGACY);
         $judge = User::factory()->create(['role' => 'judge']);
 
         $this->actingAs($judge)
