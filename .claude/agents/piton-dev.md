@@ -192,6 +192,24 @@ Top 3 finalists, and print signed result sheets.
   `gray-500/600`), visible focus rings, ≥ 44px tap targets, `prefers-reduced-motion`
   respected, no horizontal scroll at 375px, SVG icons (no emoji).
 
+## Multi-event migration (branch `feature/multi-event`, in progress)
+
+- Spec `docs/superpowers/specs/2026-10-05-multi-event-design.md`, plan
+  `docs/superpowers/plans/2026-10-05-multi-event.md`, progress ledger
+  `.superpowers/sdd/2026-10-05-multi-event/progress.md` (git-ignored).
+- New schema: `events`, `event_groups`, `categories`, `finalists`, `scores` (one row per
+  category × candidate × judge), `candidates.event_id/group_id`, `users.event_id/username`.
+  Candidate numbers are unique **per group** (today's pageant numbers each gender from 1).
+- Formulas live only in `App\Results\Tabulator` (pure); `App\Results\EventResults` loads an
+  event. Round 1 lists a group's candidates by number; finals list finalists in the order
+  they were set.
+- `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):
+  refuses if any event exists or if old score rows came from non-judge accounts, runs
+  `db:backup`, imports in a transaction, and commits only if `App\Legacy\Snapshot::diff`
+  against `App\Legacy\LegacyResults` (frozen copy of the old formulas, `DB::table` only —
+  never "improve" it) is empty. Run it between events only. Its test uses
+  `DatabaseMigrations` because VACUUM can't run inside RefreshDatabase's transaction.
+
 ## Known issues (project analysis, 2026-10-03) — not yet fixed unless noted
 
 Ask the user before fixing; report them when they touch the area you're working on.

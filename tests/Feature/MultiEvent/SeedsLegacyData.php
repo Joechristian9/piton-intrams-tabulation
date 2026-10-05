@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 trait SeedsLegacyData
 {
     /** @return array{judges: array<int,int>, female: array<int,int>, male: array<int,int>} ids */
-    protected function seedLegacy(bool $tieAtCutoff = false): array
+    protected function seedLegacy(bool $tieAtCutoff = false, bool $withAdminRow = true): array
     {
         $now = now();
         $user = fn ($name, $role) => DB::table('users')->insertGetId([
@@ -46,6 +46,9 @@ trait SeedsLegacyData
             [$male[1], $judges[1], 10, 25, 25, 25, 15],
             [$male[2], $admin, 10, 25, 25, 25, 15],               // admin row (pre-lockdown data)
         ];
+        if (! $withAdminRow) {
+            array_pop($selection);
+        }
         if ($tieAtCutoff) {
             // Make female[3] tie female[1] and female[2] exactly.
             $selection[7] = [$female[3], $judges[0], 7, 18, 17.5, 20, 11];
