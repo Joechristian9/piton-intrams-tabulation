@@ -5,6 +5,29 @@ import { toast } from "sonner";
 const field =
     "mt-1 block w-full rounded-lg border-neutral-600 bg-neutral-800 text-white placeholder-neutral-500 focus:border-yellow-400 focus:ring-yellow-400 disabled:opacity-50";
 
+// One theme choice: a radio with a small swatch drawn in that theme's colors
+// (presets via data-theme, custom themes via their CSS variables).
+function ThemeOption({ name, value, checked, onChange, label, note, swatch }) {
+    return (
+        <label
+            className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border p-2 pr-3 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-yellow-400 ${
+                checked ? "border-yellow-400 bg-yellow-400/10" : "border-neutral-700 hover:border-neutral-500"
+            }`}
+        >
+            <input type="radio" name={name} value={value} checked={checked} onChange={onChange} className="sr-only" />
+            <span {...swatch} className="flex h-9 w-12 shrink-0 items-center justify-center rounded-md border border-neutral-600 bg-neutral-900" aria-hidden="true">
+                <span className="h-3.5 w-6 rounded-sm bg-yellow-400" />
+            </span>
+            <span className="min-w-0">
+                <span className="block truncate text-sm font-medium text-white">{label}</span>
+                {note && <span className="block truncate text-xs text-gray-400">{note}</span>}
+            </span>
+        </label>
+    );
+}
+
+const swatchFor = (option) => (option?.vars ? { style: option.vars } : { "data-theme": option?.key });
+
 const Error = ({ message }) =>
     message ? (
         <p role="alert" className="mt-1 text-sm text-red-400">
@@ -17,7 +40,7 @@ const Error = ({ message }) =>
  * change submitted results are disabled once scoring has started (the server
  * enforces the same rules).
  */
-export default function Settings({ event = null, locks = {}, onDone }) {
+export default function Settings({ event = null, locks = {}, themes = null, onDone }) {
     const { data, setData, post, put, processing, errors } = useForm({
         name: event?.name ?? "",
         code: event?.code ?? "",
@@ -26,7 +49,9 @@ export default function Settings({ event = null, locks = {}, onDone }) {
         finals_from_zero: event?.finals_from_zero ?? true,
         round1_weight: event?.round1_weight ?? 40,
         finals_weight: event?.finals_weight ?? 60,
+        theme: event?.theme ?? null, // null = the app's default theme
     });
+    const defaultTheme = themes?.options.find((o) => o.key === themes.default);
 
     const scored = Boolean(locks.hasScores);
     const twoRounds = Number(data.rounds) === 2;
@@ -151,6 +176,39 @@ export default function Settings({ event = null, locks = {}, onDone }) {
                         )}
                     </fieldset>
                 </>
+            )}
+
+            {themes && (
+                <fieldset>
+                    <legend className="text-sm font-medium text-gray-300">Theme</legend>
+                    <p className="mt-1 text-xs text-gray-400">
+                        The colors judges see for this event, and you see on its pages. Make new themes on the Theme page.
+                    </p>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        <ThemeOption
+                            name="theme"
+                            value=""
+                            checked={!data.theme}
+                            onChange={() => setData("theme", null)}
+                            label="Default"
+                            note={`Follows the default (now ${defaultTheme?.label ?? "PITON Gold"})`}
+                            swatch={swatchFor(defaultTheme)}
+                        />
+                        {themes.options.map((option) => (
+                            <ThemeOption
+                                key={option.key}
+                                name="theme"
+                                value={option.key}
+                                checked={data.theme === option.key}
+                                onChange={() => setData("theme", option.key)}
+                                label={option.label}
+                                note={option.vars ? "Your theme" : null}
+                                swatch={swatchFor(option)}
+                            />
+                        ))}
+                    </div>
+                    <Error message={errors.theme} />
+                </fieldset>
             )}
 
             {scored && (

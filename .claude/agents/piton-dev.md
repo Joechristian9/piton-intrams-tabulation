@@ -41,9 +41,23 @@ Top 3 finalists, and print signed result sheets.
 - Performance: OPcache is enabled in `C:\xampp\php\php.ini` (web only; `opcache.enable_cli=0`,
   backup at `php.ini.bak-before-opcache`). `php artisan serve` on Windows handles one
   request at a time, so keep responses and static files small. `public/.htaccess` adds
-  gzip and cache headers, which only take effect if Apache serves the app.
-- Inertia 2 + React 18, Tailwind 3.4, Vite 7, `motion`, `lucide-react` icons, `sonner` toasts,
-  Ziggy `route()` helper available globally in JS.
+  gzip and cache headers, which only take effect if Apache serves the app. `server.php`
+  gzips/caches static files under `php artisan serve`; `App\Http\Middleware\CompressResponse`
+  (prepended globally in `bootstrap/app.php`) gzips HTML/JSON ≥ 1 KB for clients that accept
+  it (pages 20–35 KB → 3–5 KB; skips already-encoded, streamed and file responses). Pages
+  take 4–10 queries; keep it that way (bulk queries, `AdminQueryCountTest`). Autoloader is
+  optimized (`composer dump-autoload -o`; rerun after adding classes isn't required, PSR-4
+  falls back). Vite `chunkSizeWarningLimit` is 1000 only because lazy html2pdf is ~950 KB.
+  `AddLinkHeadersForPreloadedAssets` is deliberately not registered: `@vite` already writes
+  the preloads into the HTML; the Link header duplicated them. "Preloaded but not used"
+  console warnings seen in VS Code's built-in browser come from its load-deferring
+  intervention; real Chrome shows none (checked headless via the DevTools protocol).
+- Inertia 2 + React 18, Tailwind 3.4 (+ `tailwindcss-animate` for `animate-in` CSS
+  animations), Vite 7, `lucide-react` icons, `sonner` toasts, Ziggy `route()` helper
+  available globally in JS. **`motion` is only for the landing/login backdrop and Dashboard
+  stars** — never import it in anything admin or judge pages load (sidebar, tabs,
+  ScoreInput, HoverBorderGradient are plain CSS); it costs ~35 KB gzipped per page. Use CSS
+  transitions/keyframes with `motion-reduce:` variants instead.
 - Windows + Git Bash: inline `node -e`/`sed` scripts mangle backslashes in PHP namespaces —
   use the Edit tool for PHP `use` lines. Python is available as `py -3` (not `python`).
 
@@ -87,11 +101,17 @@ Top 3 finalists, and print signed result sheets.
   content from current props.
 - Candidate photos: always render through `Components/CandidatePhoto.jsx` (`size="card"` or
   `"thumb"`); it maps `candidates/<gender>/<n>.JPEG` and `uploads/candidates/<event>/<uuid>.jpg`
-  to their `.webp` / `-thumb.webp` siblings (a missing WebP breaks the image). Original photos:
+  to their `.webp` / `-thumb.webp` siblings (a missing WebP breaks the image). An empty
+  `profile_img` (candidate added without a photo) shows `public/candidate-placeholder.svg`.
+  Show names with `lib/candidateName.js` ("First Last Suffix") — never concatenate the
+  fields by hand. Original photos:
   run **`npm run images`** (`scripts/optimize-images.mjs`, sharp) after replacing them.
   Uploads: the browser makes the three sizes (`lib/photoResize.js`).
-- `ScoreInput.jsx` animates the glow only while hovered/focused — don't bring back
-  always-running per-card animations. `backgrounds/stars.jsx` star counts were cut for
+- `ScoreInput.jsx` animates the glow only while hovered/focused, in pure CSS
+  (`group-hover`/`group-focus-within` + a spinning conic gradient; no React state, so hover
+  and focus don't re-render) — don't bring back always-running per-card animations or
+  JS-driven ones. `HoverBorderGradient` is likewise pure CSS (it used to re-render every
+  second via setInterval). `backgrounds/stars.jsx` star counts were cut for
   low-end devices.
 - Fonts are self-hosted (`@fontsource/figtree` in `app.jsx`, `@fontsource/orbitron` in
   `Welcome.jsx`) — no external font/CDN links; the event network may have no internet.
@@ -117,8 +137,20 @@ Top 3 finalists, and print signed result sheets.
   on-screen admin table still shows names.
 - Layout: `Layouts/PageLayout.jsx` + `Components/SidebarMain.jsx`, which renders the
   server-built `nav` prop (`App\Support\Navigation`): judges get their live event's categories
-  (finals section only after finalists are set); admins get an event picker and that event's
-  result pages plus Management (Events, Notify Judges). Landing page `Pages/Welcome.jsx` —
+  (finals section only after finalists are set). Admins land on the Events list after login
+  (`HomeController` redirects them); outside an event the sidebar shows only Management →
+  Events; inside one (any URL with `{event}` or `{category}`) it shows the event name, its
+  result pages, and Management (Events, Notify Judges). There is no event picker. The
+  sidebar UI is `Components/ui/sidebar.jsx`: on desktop (md+) it expands on hover or keyboard
+  focus; below md a top bar has a menu button (lucide `Menu`/`X`, 44px, Escape closes, focus
+  moves in and back) that opens a full-screen panel, which closes on navigation. Nav icon keys
+  map in `SidebarMain.jsx` `NAV_ICONS` (medal = Top N results, trophy = Final Standings,
+  events, bell). `category` items carry `iconKey` = `categories.icon` (admin-picked in the
+  Categories setup tab's `IconPicker`; allowed even after scoring) or null = Auto, picked from
+  the name by `lib/categoryIcon.js` (keyword list in order; unmatched names cycle fallbacks by
+  menu position). Pickable keys live in `lib/categoryIcons.json`, which `Category::iconKeys()`
+  validates against; `CATEGORY_ICONS` in `categoryIcon.js` must have the same keys
+  (`tests/js/categoryIcon.test.mjs`). To add an icon, add it to both. Use lucide only. Landing page `Pages/Welcome.jsx` —
   keep it general and minimal (logo, title, org name, tagline, one login CTA, footer
   "© year Darryl Tamayo & Andrei Sam Pambid").
 - Login and other account pages: `Layouts/GuestLayout.jsx` is a dark PITON shell (adds the
@@ -136,6 +168,37 @@ Top 3 finalists, and print signed result sheets.
 - Use the `ui-ux-pro-max` skill for visual/UX decisions, but brand wins: dark background,
   gold `yellow-400` primary with blue accents from the logo, Orbitron only for the PITON
   wordmark, Figtree elsewhere.
+- **Color themes:** keep writing `yellow-*` / `amber-*` (accent) and `neutral-*` (surfaces)
+  classes — `tailwind.config.js` maps them to CSS variables (`--accent-*`, `--accent2-*`,
+  `--surface-*`) that each preset in `resources/js/lib/themes.json` sets under
+  `[data-theme="<key>"]`; the first preset, `gold`, equals Tailwind's own colors. Never
+  hard-code hex for accents/surfaces or the theme won't apply. `gray-*`, `blue-*`, `red-*`
+  are not themed. **Themes are per event:** `events.theme` (preset key, `custom-{id}`, or
+  null = Default), picked in the event Settings tab (`Tabs/Settings.jsx` `ThemeOption`
+  radios; `themes` prop = `AppTheme::options()` on Events index + edit; validated, copied
+  by Duplicate; only updated when the field is sent). Judges get their event's theme;
+  admins get the theme of the event in the URL (`AdminEventContext`); everything else
+  (login, events list, Theme page, profile) and events on Default use the **default
+  theme**, set on `Pages/Admin/Theme.jsx` (`Admin\ThemeController`, `admin.theme.edit|update`,
+  sidebar Management → Theme; cards list the events using each theme) and saved in the
+  `settings` table. `AppTheme::resolve(?Event)` → event theme → saved default → `gold`
+  (also when a theme is gone or tables are missing). Changing the default, or editing a
+  custom theme, bumps the `event` live stamp of affected events so judges' pages reload.
+  Shared prop `theme` → `<html data-theme>` in `app.blade.php`, kept current by `app.jsx`.
+  Any element can preview a theme with its own `data-theme` (or inline variables).
+  To add a preset, add it to `themes.json` (accent/surface = Tailwind palette names) and
+  rebuild. The PDF report keeps its own fixed white style.
+- **Custom themes:** admins also create/edit/delete their own (`custom_themes`: name ≤ 40
+  unique, `accent` + `surface` hex; `App\Models\CustomTheme`, key `custom-{id}`; routes
+  `admin.themes.store|update|destroy`; it can't be deleted while it's the default or an
+  event uses it). Shades come from
+  the two colors via `resources/js/lib/themeScale.json` (accent = shade 400, background =
+  shade 900, others mixed toward white/black), computed by `App\Support\ThemeColors` (server)
+  and `lib/themeColors.js` (editor live preview) — keep them identical; both tests pin the
+  same numbers. Readability rules in both: black text on the accent ≥ 4.5:1, background
+  luminance ≤ 0.04, accent vs background ≥ 4.5:1. `AppTheme::resolve()` → shared props
+  `theme` + `themeVars` (custom theme CSS variables, else null), set inline on `<html>` by
+  `app.blade.php` and `app.jsx`.
 - Meet the basics: text contrast ≥ 4.5:1 (use `gray-400` or lighter on black, not
   `gray-500/600`), visible focus rings, ≥ 44px tap targets, `prefers-reduced-motion`
   respected, no horizontal scroll at 375px, SVG icons (no emoji).
@@ -159,8 +222,8 @@ Top 3 finalists, and print signed result sheets.
 - Admin results: `Admin\ResultsController` under `/admin/events/{event}/results/...`
   (`admin.results.category|round1|standings`, `admin` middleware — judges get 403). Pages
   `Admin/Results/{Category,Round,Standings}.jsx`; standings show weighted columns in
-  carry-over mode. `App\Support\AdminEventContext` picks the admin's event (URL → session →
-  latest started live → newest); the sidebar has an event picker (`nav.events`).
+  carry-over mode. `App\Support\AdminEventContext` takes the admin's event from the URL only
+  (no session memory, no fallback), so the events list and profile page have no event.
   `Navigation` builds the admin sections; shared `live` uses the admin's event.
 - Setting finalists: `Admin\FinalistController` (`admin.finalists.set`, POST
   `/admin/events/{event}/finalists`): admin password, 2-round events only, exactly
@@ -186,10 +249,22 @@ Top 3 finalists, and print signed result sheets.
   delete a group with candidates) and `Admin\CategoryController` (`admin.categories.*`; max
   0.01–999.99; a scored category keeps its max/round and can't be deleted; a round with scores
   takes no new categories, added or moved in). Setup tabs `Pages/Admin/Events/Tabs/{Groups,Categories}.jsx` use
-  `Tabs/request.js` (`send(method, url, data, toast, then)` — chain dependent requests).
+  `Tabs/request.js` (`send(method, url, data, toast, then, { onError, onFinish })` — chain
+  dependent requests; it traps validation errors, non-Inertia responses (404/419/500 via the
+  `invalid` event) and network failures (`exception`) into `onError(message, errors)`, default
+  a toast, instead of Inertia's error modal). Every setup delete (groups, categories,
+  candidates) goes through `Tabs/useConfirmDelete.jsx` → `Components/ConfirmDialog.jsx`
+  (stays open with the error if the delete fails) — never `window.confirm` or an instant
+  delete. Edits are checked in the browser first with `Tabs/validate.js` (`checkName`,
+  `checkMaxPoints`, matching the controllers' rules; `tests/js/setupValidate.test.mjs`);
+  errors show inline under the row (`role="alert"`, `aria-invalid`), Enter saves, Escape
+  reverts, a failed save restores the saved values, and add forms keep their input until the
+  server accepts it.
 - Candidates: `Admin\CandidateController` (`admin.candidates.*`; update is PUT via POST +
-  `_method` for multipart). Numbers unique per group; photo = `photo` (JPEG ≤ 5 MB) +
-  `photo_card` (WebP ≤ 1 MB) + `photo_thumb` (WebP ≤ 200 KB), required together, stored as
+  `_method` for multipart). Numbers unique per group; optional `name_suffix` (≤ 20, e.g.
+  "Jr."). The photo is optional (none = `profile_img` `''`, shown as the placeholder); when
+  given, `photo` (JPEG ≤ 5 MB) + `photo_card` (WebP ≤ 1 MB) + `photo_thumb` (WebP ≤ 200 KB)
+  come together, stored as
   `uploads/candidates/{event}/{uuid}.jpg|.webp|-thumb.webp`; replacing/deleting removes old
   upload files only after the save succeeds (a failed save removes the new files instead) and
   never touches `public/candidates/`. Scored candidates can't be deleted or

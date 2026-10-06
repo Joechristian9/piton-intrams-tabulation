@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import candidateName from "@/lib/candidateName";
 import {
     AlertDialog,
     AlertDialogContent,
@@ -49,7 +50,7 @@ const CandidateRow = ({ c, checked, disabled, onChange }) => (
         />
         <span className="w-8 text-neutral-400">#{c.candidate.candidate_number}</span>
         <span className="flex-1">
-            {c.candidate.first_name} {c.candidate.last_name}
+            {candidateName(c.candidate)}
         </span>
         <span className="text-sm text-neutral-400">
             Rank {c.rank} · {Number(c.total).toFixed(2)}

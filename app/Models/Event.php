@@ -23,6 +23,7 @@ class Event extends Model
     protected $fillable = [
         'name',
         'code',
+        'theme',
         'status',
         'rounds',
         'finalists_per_group',

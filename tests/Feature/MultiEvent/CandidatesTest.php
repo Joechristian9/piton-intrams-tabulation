@@ -76,6 +76,26 @@ class CandidatesTest extends TestCase
         $this->assertNotSame($before, LiveVersions::all($this->event->id)['event']);
     }
 
+    public function test_a_candidate_can_be_added_without_a_photo_and_with_a_name_suffix(): void
+    {
+        $this->create(['last_name' => 'Dela Cruz', 'name_suffix' => 'Jr.'], [])->assertSessionHasNoErrors();
+
+        $candidate = Candidate::sole();
+        $this->assertSame('', $candidate->profile_img);   // the page shows a placeholder
+        $this->assertSame('Jr.', $candidate->name_suffix);
+        $this->assertSame([], Storage::disk('uploads')->allFiles());
+
+        // A photo can be added later; the suffix can be cleared.
+        $this->actingAs($this->admin)->post(route('admin.candidates.update', $candidate), [
+            '_method' => 'PUT', ...$this->fields(['name_suffix' => '']), ...$this->photos(),
+        ])->assertSessionHasNoErrors();
+        $candidate->refresh();
+        $this->assertNull($candidate->name_suffix);
+        $this->assertStringStartsWith('uploads/candidates/', $candidate->profile_img);
+
+        $this->create(['candidate_number' => 2, 'name_suffix' => str_repeat('x', 21)], [])->assertSessionHasErrors('name_suffix');
+    }
+
     /** Review Focus 2: unsupported or huge files are rejected, never stored. */
     public function test_unsupported_or_oversized_photos_are_rejected(): void
     {

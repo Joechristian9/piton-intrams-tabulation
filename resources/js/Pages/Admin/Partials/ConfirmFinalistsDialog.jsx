@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import candidateName from "@/lib/candidateName";
 import { Lock } from "lucide-react";
 import {
     AlertDialog,
@@ -25,7 +26,7 @@ const FinalistList = ({ label, finalists }) => (
                         #{c.candidate.candidate_number}
                     </span>
                     <span className="flex-1">
-                        {c.candidate.first_name} {c.candidate.last_name}
+                        {candidateName(c.candidate)}
                     </span>
                     <span className="text-sm text-neutral-400">
                         Rank {c.rank} · {Number(c.total).toFixed(2)}

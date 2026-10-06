@@ -5,7 +5,8 @@ import { ImagePlus, Pencil, Trash2, UserPlus } from "lucide-react";
 import Modal from "@/Components/Modal";
 import CandidatePhoto from "@/Components/CandidatePhoto";
 import { resizePhoto } from "@/lib/photoResize";
-import send from "./request";
+import candidateName from "@/lib/candidateName";
+import useConfirmDelete from "./useConfirmDelete";
 
 const field =
     "mt-1 block w-full min-h-11 rounded-lg border-neutral-600 bg-neutral-800 text-white focus:border-yellow-400 focus:ring-yellow-400";
@@ -15,6 +16,7 @@ function CandidateForm({ event, groups, candidate, onClose }) {
         candidate_number: candidate?.candidate_number ?? "",
         first_name: candidate?.first_name ?? "",
         last_name: candidate?.last_name ?? "",
+        name_suffix: candidate?.name_suffix ?? "",
         course: candidate?.course ?? "",
         group_id: candidate?.group_id ?? groups[0]?.id ?? "",
     });
@@ -43,10 +45,6 @@ function CandidateForm({ event, groups, candidate, onClose }) {
 
     const submit = (e) => {
         e.preventDefault();
-        if (!candidate && !photos) {
-            setPhotoError("Add a photo.");
-            return;
-        }
 
         const payload = {
             ...data,
@@ -78,7 +76,7 @@ function CandidateForm({ event, groups, candidate, onClose }) {
                 <div className="h-36 w-24 shrink-0 overflow-hidden rounded-lg border border-neutral-700 bg-neutral-800">
                     {preview ? (
                         <img src={preview} alt="" className="h-full w-full object-cover" />
-                    ) : candidate ? (
+                    ) : candidate?.profile_img ? (
                         <CandidatePhoto path={candidate.profile_img} alt="" className="h-full w-full object-cover" />
                     ) : (
                         <div className="grid h-full place-items-center text-gray-500">
@@ -88,10 +86,13 @@ function CandidateForm({ event, groups, candidate, onClose }) {
                 </div>
                 <div className="flex-1">
                     <label htmlFor="cand-photo" className="text-sm font-medium text-gray-300">
-                        Photo {candidate && <span className="text-gray-400">(leave empty to keep)</span>}
+                        Photo{" "}
+                        <span className="text-gray-400">
+                            {candidate?.profile_img ? "(leave empty to keep)" : "(optional)"}
+                        </span>
                     </label>
                     <input id="cand-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={pickPhoto} className="mt-1 block w-full text-sm text-gray-300 file:mr-3 file:min-h-11 file:rounded-lg file:border-0 file:bg-neutral-700 file:px-4 file:text-white" />
-                    <p className="mt-1 text-xs text-gray-400">JPG or PNG. It's resized here before uploading.</p>
+                    <p className="mt-1 text-xs text-gray-400">JPG or PNG. It's resized here before uploading. Without one, a placeholder is shown.</p>
                     {(photoError || errors.photo || errors.photo_card || errors.photo_thumb) && (
                         <p role="alert" className="mt-1 text-sm text-red-400">{photoError ?? errors.photo ?? errors.photo_card ?? errors.photo_thumb}</p>
                     )}
@@ -121,7 +122,12 @@ function CandidateForm({ event, groups, candidate, onClose }) {
                     <input id="cand-last" className={field} value={data.last_name} onChange={set("last_name")} required />
                     {err("last_name")}
                 </div>
-                <div className="sm:col-span-2">
+                <div>
+                    <label htmlFor="cand-suffix" className="text-sm font-medium text-gray-300">Suffix (optional)</label>
+                    <input id="cand-suffix" className={field} value={data.name_suffix ?? ""} onChange={set("name_suffix")} placeholder="Jr., Sr., III" maxLength={20} />
+                    {err("name_suffix")}
+                </div>
+                <div>
                     <label htmlFor="cand-course" className="text-sm font-medium text-gray-300">Course / description (optional)</label>
                     <input id="cand-course" className={field} value={data.course ?? ""} onChange={set("course")} />
                     {err("course")}
@@ -141,16 +147,20 @@ function CandidateForm({ event, groups, candidate, onClose }) {
 // An event's candidates with their photos, by group.
 export default function Candidates({ event, groups, candidates }) {
     const [editing, setEditing] = useState(null); // null | "new" | candidate
+    const [askDelete, deleteDialog] = useConfirmDelete();
 
     if (groups.length === 0) {
         return <p className="text-gray-300">Add at least one group first (Groups tab).</p>;
     }
 
-    const remove = (c) => {
-        if (window.confirm(`Delete ${c.first_name} ${c.last_name}? Their photo is deleted too.`)) {
-            send("delete", route("admin.candidates.destroy", c.id), {}, "Candidate deleted.");
-        }
-    };
+    const remove = (c) =>
+        askDelete({
+            title: `Delete ${candidateName(c)}?`,
+            description: `Candidate #${c.candidate_number} is removed from this event${c.profile_img ? ", along with their photo" : ""}. This can't be undone.`,
+            confirmLabel: "Delete candidate",
+            url: route("admin.candidates.destroy", c.id),
+            success: "Candidate deleted.",
+        });
 
     return (
         <div className="space-y-6 text-white">
@@ -172,10 +182,10 @@ export default function Candidates({ event, groups, candidates }) {
                                         <CandidatePhoto path={c.profile_img} size="thumb" alt="" width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
                                         <span className="w-10 text-gray-400">#{c.candidate_number}</span>
                                         <span className="min-w-0 flex-1 truncate">
-                                            {c.first_name} {c.last_name}
+                                            {candidateName(c)}
                                             {c.course && <span className="block truncate text-xs text-gray-400">{c.course}</span>}
                                         </span>
-                                        <button type="button" onClick={() => setEditing(c)} aria-label={`Edit ${c.first_name}`} className="grid h-11 w-11 place-items-center rounded-lg border border-neutral-600 bg-neutral-800 hover:bg-neutral-700">
+                                        <button type="button" onClick={() => setEditing(c)} aria-label={`Edit ${candidateName(c)}`} className="grid h-11 w-11 place-items-center rounded-lg border border-neutral-600 bg-neutral-800 hover:bg-neutral-700">
                                             <Pencil className="h-4 w-4" />
                                         </button>
                                         <button
@@ -183,7 +193,7 @@ export default function Candidates({ event, groups, candidates }) {
                                             onClick={() => remove(c)}
                                             disabled={c.hasScores}
                                             title={c.hasScores ? "This candidate has scores, so they can't be deleted." : undefined}
-                                            aria-label={`Delete ${c.first_name}`}
+                                            aria-label={`Delete ${candidateName(c)}`}
                                             className="grid h-11 w-11 place-items-center rounded-lg border border-red-500/50 bg-neutral-800 text-red-300 hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-30"
                                         >
                                             <Trash2 className="h-4 w-4" />
@@ -207,6 +217,7 @@ export default function Candidates({ event, groups, candidates }) {
                     />
                 </Modal>
             )}
+            {deleteDialog}
         </div>
     );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo, useCallback } from "react";
+import candidateName from "@/lib/candidateName";
 import ScoreInput from "./ScoreInput";
 import CandidatePhoto from "@/Components/CandidatePhoto";
 
@@ -13,7 +14,7 @@ const CandidateCard = memo(function CandidateCard({ candidate, value, maxScore, 
         <div className="bg-neutral-900 border border-white/20 rounded-xl p-4 shadow-[0_4px_15px_rgba(255,255,255,0.3)] hover:shadow-[0_6px_25px_rgba(255,255,255,0.5)] transition-shadow duration-300 flex flex-col items-center gap-3 overflow-hidden">
             <CandidatePhoto
                 path={candidate.profile_img}
-                alt={`${candidate.first_name} ${candidate.last_name}`}
+                alt={candidateName(candidate)}
                 width={480}
                 height={720}
                 className="w-full h-72 object-cover rounded-md"
@@ -22,7 +23,7 @@ const CandidateCard = memo(function CandidateCard({ candidate, value, maxScore, 
             <div className="text-center w-full overflow-hidden">
                 <p className="text-xs text-gray-400 mb-1"># {candidate.candidate_number}</p>
                 <h3 className="font-bold text-white truncate w-full px-2">
-                    {candidate.first_name} {candidate.last_name}
+                    {candidateName(candidate)}
                 </h3>
 
                 {candidate.course && (

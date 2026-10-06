@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 export const Tabs = ({
@@ -15,109 +14,63 @@ export const Tabs = ({
     // objects themselves froze the content at the first render.
     const [activeValue, setActiveValue] = useState(propTabs[0].value);
     const active = propTabs.find((tab) => tab.value === activeValue) ?? propTabs[0];
-    const tabs = [active, ...propTabs.filter((tab) => tab !== active)];
-
-    const moveSelectedTabToTop = (idx) => {
-        setActiveValue(propTabs[idx].value);
-    };
-
-    const [hovering, setHovering] = useState(false);
 
     return (
         <>
             <div
+                role="tablist"
                 className={cn(
-                    "flex flex-row items-center justify-center [perspective:1000px] relative overflow-auto sm:overflow-visible no-visible-scrollbar max-w-full w-full",
-                    containerClassName
+                    "flex flex-row items-center justify-center relative overflow-auto sm:overflow-visible no-visible-scrollbar max-w-full w-full",
+                    containerClassName,
                 )}
             >
-                {propTabs.map((tab, idx) => (
-                    <button
-                        key={tab.title}
-                        onClick={() => {
-                            moveSelectedTabToTop(idx);
-                        }}
-                        onMouseEnter={() => setHovering(true)}
-                        onMouseLeave={() => setHovering(false)}
-                        className={cn(
-                            "relative px-4 py-2 rounded-full",
-                            tabClassName
-                        )}
-                        style={{
-                            transformStyle: "preserve-3d",
-                        }}
-                    >
-                        {active.value === tab.value && (
-                            <motion.div
-                                layoutId="clickedbutton"
-                                transition={{
-                                    type: "spring",
-                                    bounce: 0.3,
-                                    duration: 0.6,
-                                }}
+                {propTabs.map((tab) => {
+                    const selected = tab.value === active.value;
+                    return (
+                        <button
+                            key={tab.title}
+                            type="button"
+                            role="tab"
+                            aria-selected={selected}
+                            onClick={() => setActiveValue(tab.value)}
+                            className={cn("relative px-4 py-2 rounded-full", tabClassName)}
+                        >
+                            {/* The highlight behind the active tab (plain CSS; no animation library). */}
+                            <span
+                                aria-hidden="true"
                                 className={cn(
-                                    "absolute inset-0 bg-gray-200 dark:bg-zinc-800 rounded-full ",
-                                    activeTabClassName
+                                    "absolute inset-0 rounded-full bg-gray-200 dark:bg-zinc-800 transition-opacity duration-200",
+                                    activeTabClassName,
+                                    selected ? "opacity-100" : "opacity-0",
                                 )}
                             />
-                        )}
-
-                        <span className="relative block text-black dark:text-white">
-                            {tab.title}
-                        </span>
-                    </button>
-                ))}
+                            <span className="relative block text-black dark:text-white">{tab.title}</span>
+                        </button>
+                    );
+                })}
             </div>
-            <FadeInDiv
-                tabs={tabs}
-                active={active}
-                key={active.value}
-                hovering={hovering}
-                className={cn("mt-20", contentClassName)}
-            />
+            <TabContent tab={active} key={active.value} className={cn("mt-20", contentClassName)} />
         </>
     );
 };
 
-export const FadeInDiv = ({ className, tabs, hovering }) => {
-    const isActive = (tab) => tab.value === tabs[0].value;
+// Only the active tab is rendered (hidden ones used to mount a full candidate grid,
+// photos included). It fades in when the tab changes.
+const TabContent = ({ tab, className }) => (
+    <div className="relative w-full h-full">
+        <div
+            role="tabpanel"
+            className={cn(
+                "w-full h-full absolute top-0 left-0 animate-in fade-in-0 slide-in-from-bottom-4 duration-300 motion-reduce:animate-none",
+                className,
+            )}
+        >
+            <h2 className="text-2xl font-bold text-neutral-200 text-center mb-6">{tab.category}</h2>
 
-    return (
-        <div className="relative w-full h-full">
-            {/* Only the active tab (first after reordering) is rendered: the hidden
-                ones used to mount a full candidate grid, photos included, behind it. */}
-            {tabs.slice(0, 1).map((tab, idx) => (
-                <motion.div
-                    key={tab.value}
-                    layoutId={tab.value}
-                    style={{
-                        scale: 1 - idx * 0.1,
-                        top: hovering ? idx * -50 : 0,
-                        zIndex: -idx,
-                        opacity: idx < 3 ? 1 - idx * 0.1 : 0,
-                    }}
-                    animate={{
-                        y: isActive(tab) ? [0, 40, 0] : 0,
-                    }}
-                    className={cn(
-                        "w-full h-full absolute top-0 left-0",
-                        className
-                    )}
-                >
-                    <h2 className="text-2xl font-bold text-neutral-200 text-center mb-6">
-                        {tab.category}
-                    </h2>
-
-                    {/* Call content as function for reactive re-render */}
-                    {tab.content && (
-                        <div className="tab-content">
-                            {typeof tab.content === "function"
-                                ? tab.content()
-                                : tab.content}
-                        </div>
-                    )}
-                </motion.div>
-            ))}
+            {/* Call content as function for reactive re-render */}
+            {tab.content && (
+                <div className="tab-content">{typeof tab.content === "function" ? tab.content() : tab.content}</div>
+            )}
         </div>
-    );
-};
+    </div>
+);

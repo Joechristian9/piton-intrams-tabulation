@@ -17,6 +17,7 @@ class Candidate extends Model
         'candidate_number',
         'first_name',
         'last_name',
+        'name_suffix',
         'gender',
         'course',
     ];

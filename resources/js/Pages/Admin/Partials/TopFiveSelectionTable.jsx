@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import candidateName from "@/lib/candidateName";
 import {
     Table,
     TableHeader,
@@ -89,14 +90,13 @@ const TopFiveSelectionTable = ({
                                         <CandidatePhoto
                                             path={c.candidate.profile_img}
                                             size="thumb"
-                                            alt={`${c.candidate.first_name} ${c.candidate.last_name}`}
+                                            alt={candidateName(c.candidate)}
                                             width={32}
                                             height={32}
                                             className="w-8 h-8 rounded-full object-cover"
                                         />
                                         <span>
-                                            {c.candidate.first_name}{" "}
-                                            {c.candidate.last_name}
+                                            {candidateName(c.candidate)}
                                         </span>
                                     </div>
                                 </TableCell>

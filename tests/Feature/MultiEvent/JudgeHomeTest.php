@@ -58,11 +58,11 @@ class JudgeHomeTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->component('Judge/Waiting')->where('state', 'ended'));
     }
 
-    public function test_admins_still_get_the_dashboard(): void
+    public function test_admins_land_on_the_events_list(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)->get(route('dashboard'))
-            ->assertInertia(fn (Assert $page) => $page->component('Dashboard'));
+            ->assertRedirect(route('admin.events.index'));
     }
 }

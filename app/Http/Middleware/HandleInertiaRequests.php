@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Support\AdminEventContext;
+use App\Support\AppTheme;
 use App\Support\LiveVersions;
 use App\Support\Navigation;
 use Illuminate\Http\Request;
@@ -47,6 +48,15 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            // The color theme (data-theme on <html>: app.blade.php, then app.jsx): the
+            // event's own (a judge's event, or the event an admin has open), else the app
+            // default. `themeVars` carries a custom theme's CSS variables (null for presets).
+            ...(function () use ($request, $resolveAdminEvent) {
+                $user = $request->user();
+                $theme = AppTheme::resolve($user?->role === 'judge' ? $user->event : $resolveAdminEvent());
+
+                return ['theme' => $theme['key'], 'themeVars' => $theme['vars']];
+            })(),
             // Sidebar items built from the user's event (App\Support\Navigation).
             'nav' => fn () => Navigation::for($request->user(), $resolveAdminEvent()),
             // Version stamps this page was built with; the pollers reload when they change.

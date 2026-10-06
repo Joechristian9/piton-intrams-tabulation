@@ -10,6 +10,7 @@ import {
     SidebarHeader,
 } from "@/Components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import categoryIcon from "@/lib/categoryIcon";
 import {
     ListChecks,
     LogOut,
@@ -18,19 +19,23 @@ import {
     Users,
     BellRing,
     CalendarDays,
+    Medal,
+    Palette,
 } from "lucide-react";
 
 // Icon keys sent by the server-built nav (see app/Support/Navigation.php).
+// Categories get the icon the admin picked, else one from their name (lib/categoryIcon.js).
 const NAV_ICONS = {
-    category: ListChecks,
     trophy: Trophy,
+    medal: Medal,
     events: CalendarDays,
     bell: BellRing,
+    palette: Palette,
     users: Users,
 };
 
 // The sidebar: items come from the server (`nav` shared prop) for the user's
-// event — a judge's categories, or the admin's result pages for the picked event.
+// event — a judge's categories, or the result pages of the event an admin has open.
 export default function SidebarMain({ children }) {
     const [open, setOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -46,10 +51,21 @@ export default function SidebarMain({ children }) {
 
     const currentPath = url.split("?")[0];
 
+    // Position of each category in the whole menu, so unmatched names still get distinct icons.
+    const categoryIndex = new Map(
+        nav.sections
+            .flatMap((s) => s.items)
+            .filter((item) => item.icon === "category")
+            .map((item, i) => [item.href, i]),
+    );
+
     const renderNavItems = (items) =>
         items.map((item) => {
             const active = item.href === currentPath;
-            const Icon = NAV_ICONS[item.icon] ?? ListChecks;
+            const Icon =
+                item.icon === "category"
+                    ? categoryIcon(item.label, categoryIndex.get(item.href), item.iconKey)
+                    : (NAV_ICONS[item.icon] ?? ListChecks);
 
             return (
                 <SidebarLink
@@ -70,6 +86,7 @@ export default function SidebarMain({ children }) {
                         href: item.href,
                         onClick: (e) => {
                             e.preventDefault();
+                            setOpen(false); // close the phone menu panel
                             router.get(item.href);
                         },
                     }}
@@ -82,15 +99,6 @@ export default function SidebarMain({ children }) {
         .flatMap((s) => s.items)
         .find((item) => item.href === currentPath);
 
-    const pickEvent = (id) => {
-        const picked = nav.events.find((ev) => ev.id === Number(id));
-        router.get(
-            picked.rounds === 2
-                ? route("admin.results.round1", picked.id)
-                : route("admin.results.standings", picked.id),
-        );
-    };
-
     return (
         <div className="dark">
             {activeLink && <Head title={activeLink.label.trim()} />}
@@ -100,31 +108,10 @@ export default function SidebarMain({ children }) {
                         <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
                             {open ? <Logo /> : <LogoIcon />}
 
-                            {nav.event && open && !nav.events && (
+                            {nav.event && open && (
                                 <p className="mt-4 truncate px-1 text-sm font-semibold text-yellow-400">
                                     {nav.event.name}
                                 </p>
-                            )}
-
-                            {/* Admins pick which event the result pages show. */}
-                            {nav.events && nav.event && open && (
-                                <label className="mt-4 block px-1">
-                                    <span className="text-xs font-medium uppercase tracking-wider text-neutral-400">
-                                        Event
-                                    </span>
-                                    <select
-                                        value={nav.event.id}
-                                        onChange={(e) => pickEvent(e.target.value)}
-                                        className="mt-1 block min-h-11 w-full rounded-lg border-neutral-600 bg-neutral-900 text-sm font-semibold text-yellow-400 focus:border-yellow-400 focus:ring-yellow-400"
-                                    >
-                                        {nav.events.map((ev) => (
-                                            <option key={ev.id} value={ev.id}>
-                                                {ev.name}
-                                                {ev.status === "live" ? " (live)" : ""}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
                             )}
 
                             {nav.sections.map((section) => (
@@ -190,9 +177,9 @@ export default function SidebarMain({ children }) {
                     </SidebarBody>
                 </Sidebar>
 
-                <div className="flex h-full flex-1 flex-col overflow-y-auto border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
+                <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
                     {children}
-                </div>
+                </main>
             </div>
         </div>
     );

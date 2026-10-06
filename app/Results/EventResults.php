@@ -156,6 +156,7 @@ class EventResults
             'candidate_number' => $candidate->candidate_number,
             'first_name' => $candidate->first_name,
             'last_name' => $candidate->last_name,
+            'name_suffix' => $candidate->name_suffix,
             'course' => $candidate->course,
             'profile_img' => $candidate->profile_img,
         ];

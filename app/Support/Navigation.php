@@ -8,6 +8,7 @@ use App\Models\User;
 /**
  * Sidebar items for the current user, shared with every page as `nav`:
  * ['event' => ['id', 'name', 'status'] | null, 'sections' => [['label', 'items' => [['label', 'href', 'icon']]]]].
+ * Category items also carry `iconKey`: the icon the admin picked, or null (picked from the name).
  * Hrefs are relative paths, so the sidebar can mark the active item by URL.
  */
 class Navigation
@@ -21,7 +22,7 @@ class Navigation
         if ($user?->role === 'admin') {
             return $adminEvent ? self::admin($adminEvent) : [
                 'event' => null,
-                'sections' => [['label' => 'Management', 'items' => [self::eventsItem()]]],
+                'sections' => [['label' => 'Management', 'items' => [self::eventsItem(), self::themeItem()]]],
             ];
         }
 
@@ -35,6 +36,7 @@ class Navigation
             'label' => $category->name,
             'href' => route('admin.results.category', [$event, $category], false),
             'icon' => 'category',
+            'iconKey' => $category->icon,
         ])->all();
         $standings = ['label' => 'Final Standings', 'href' => route('admin.results.standings', $event, false), 'icon' => 'trophy'];
 
@@ -43,7 +45,7 @@ class Navigation
             : [
                 ['label' => "Top {$n} Selection", 'items' => [
                     ...$resultItems(1),
-                    ['label' => "Top {$n} Selection Results", 'href' => route('admin.results.round1', $event, false), 'icon' => 'trophy'],
+                    ['label' => "Top {$n} Selection Results", 'href' => route('admin.results.round1', $event, false), 'icon' => 'medal'],
                 ]],
                 ['label' => "Top {$n} Finalist", 'items' => [...$resultItems(2), $standings]],
             ];
@@ -52,12 +54,11 @@ class Navigation
         $sections[] = ['label' => 'Management', 'items' => [
             self::eventsItem(),
             ['label' => 'Notify Judges', 'href' => route('admin.notify', $event, false), 'icon' => 'bell'],
+            self::themeItem(),
         ]];
 
         return [
             'event' => ['id' => $event->id, 'name' => $event->name, 'status' => $event->status],
-            'events' => Event::orderBy('id')->get(['id', 'name', 'status', 'rounds'])
-                ->map(fn ($e) => ['id' => $e->id, 'name' => $e->name, 'status' => $e->status, 'rounds' => $e->rounds])->all(),
             'sections' => $sections,
         ];
     }
@@ -65,6 +66,11 @@ class Navigation
     private static function eventsItem(): array
     {
         return ['label' => 'Events', 'href' => route('admin.events.index', [], false), 'icon' => 'events'];
+    }
+
+    private static function themeItem(): array
+    {
+        return ['label' => 'Theme', 'href' => route('admin.theme.edit', [], false), 'icon' => 'palette'];
     }
 
     private static function judge(Event $event): array
@@ -95,6 +101,7 @@ class Navigation
             'label' => $category->name,
             'href' => route('score.show', $category, false),
             'icon' => 'category',
+            'iconKey' => $category->icon,
         ])->all();
     }
 }
