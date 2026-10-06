@@ -85,36 +85,39 @@ class AdminResultsTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_admin_context_follows_the_last_event_opened_then_defaults_to_the_latest_live_one(): void
+    public function test_admin_context_is_the_event_in_the_url_and_nothing_outside_an_event(): void
     {
-        $older = $this->makeEvent(['status' => Event::LIVE]);
-        $older->forceFill(['started_at' => now()->subDay()])->save();
-        $newer = $this->makeEvent(['status' => Event::LIVE]);
-        $newer->forceFill(['started_at' => now()])->save();
-        $this->makeEvent(['status' => Event::SETUP]);
+        $this->withoutVite();
+        $event = $this->makeEvent(['status' => Event::LIVE]);
+        $this->makeEvent(['status' => Event::LIVE]);
 
-        $request = Request::create('/');
-        $request->setLaravelSession(app('session.store'));
-        $this->assertSame($newer->id, AdminEventContext::current($request)->id);
+        $this->assertNull(AdminEventContext::current(Request::create('/')));
 
-        $this->actingAs($this->admin)->get(route('admin.results.round1', $older))
-            ->assertInertia(fn (Assert $page) => $page->where('nav.event.id', $older->id));
-        $this->actingAs($this->admin)->get('/profile')
-            ->assertInertia(fn (Assert $page) => $page->where('nav.event.id', $older->id));
+        $this->actingAs($this->admin)->get(route('admin.results.round1', $event))
+            ->assertInertia(fn (Assert $page) => $page->where('nav.event.id', $event->id));
+        $this->actingAs($this->admin)->get(route('admin.events.edit', $event))
+            ->assertInertia(fn (Assert $page) => $page->where('nav.event.id', $event->id));
+
+        // Leaving the event: the events list and account page show only Management.
+        foreach ([route('admin.events.index'), '/profile'] as $url) {
+            $this->actingAs($this->admin)->get($url)
+                ->assertInertia(fn (Assert $page) => $page
+                    ->where('nav.event', null)
+                    ->where('nav.sections.0.label', 'Management')
+                    ->has('nav.sections', 1));
+        }
     }
 
     public function test_admin_nav_lists_result_pages_for_the_event(): void
     {
         $event = $this->makeEvent(['status' => Event::LIVE], ['Female'], [[1, 'Swim Wear', 25], [2, 'Delivery', 40]]);
-        $other = $this->makeEvent(['status' => Event::SETUP]);
-
         $nav = Navigation::for($this->admin, $event);
 
         $this->assertSame(['Top 3 Selection', 'Top 3 Finalist', 'Management'], array_column($nav['sections'], 'label'));
         $this->assertSame(['Swim Wear', 'Top 3 Selection Results'], array_column($nav['sections'][0]['items'], 'label'));
         $this->assertSame(route('admin.results.round1', $event, false), $nav['sections'][0]['items'][1]['href']);
         $this->assertSame(['Delivery', 'Final Standings'], array_column($nav['sections'][1]['items'], 'label'));
-        $this->assertSame([$event->id, $other->id], array_column($nav['events'], 'id'));
+        $this->assertArrayNotHasKey('events', $nav);   // no event picker: admins open events from the Events page
         $this->assertSame('Events', $nav['sections'][2]['items'][0]['label']);
         $this->assertSame(route('admin.events.index', [], false), $nav['sections'][2]['items'][0]['href']);
     }

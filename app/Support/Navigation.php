@@ -56,8 +56,6 @@ class Navigation
 
         return [
             'event' => ['id' => $event->id, 'name' => $event->name, 'status' => $event->status],
-            'events' => Event::orderBy('id')->get(['id', 'name', 'status', 'rounds'])
-                ->map(fn ($e) => ['id' => $e->id, 'name' => $e->name, 'status' => $e->status, 'rounds' => $e->rounds])->all(),
             'sections' => $sections,
         ];
     }

@@ -10,15 +10,19 @@ use Inertia\Inertia;
 /**
  * Where everyone lands after logging in. A judge goes straight to their event's
  * first category (the finals once finalists are set), or sees a waiting page
- * while the event isn't live. Admins, and judges not yet moved to an event, keep
- * the dashboard.
+ * while the event isn't live. Admins go to the events list; judges not yet moved
+ * to an event keep the dashboard.
  */
 class HomeController extends Controller
 {
     public function __invoke(Request $request)
     {
         $user = $request->user();
-        $event = $user->role === 'judge' ? $user->event : null;
+        if ($user->role === 'admin') {
+            return redirect()->route('admin.events.index');
+        }
+
+        $event = $user->event;
 
         if (! $event) {
             return Inertia::render('Dashboard');

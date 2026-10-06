@@ -117,8 +117,10 @@ Top 3 finalists, and print signed result sheets.
   on-screen admin table still shows names.
 - Layout: `Layouts/PageLayout.jsx` + `Components/SidebarMain.jsx`, which renders the
   server-built `nav` prop (`App\Support\Navigation`): judges get their live event's categories
-  (finals section only after finalists are set); admins get an event picker and that event's
-  result pages plus Management (Events, Notify Judges). Landing page `Pages/Welcome.jsx` —
+  (finals section only after finalists are set). Admins land on the Events list after login
+  (`HomeController` redirects them); outside an event the sidebar shows only Management →
+  Events; inside one (any URL with `{event}` or `{category}`) it shows the event name, its
+  result pages, and Management (Events, Notify Judges). There is no event picker. Landing page `Pages/Welcome.jsx` —
   keep it general and minimal (logo, title, org name, tagline, one login CTA, footer
   "© year Darryl Tamayo & Andrei Sam Pambid").
 - Login and other account pages: `Layouts/GuestLayout.jsx` is a dark PITON shell (adds the
@@ -159,8 +161,8 @@ Top 3 finalists, and print signed result sheets.
 - Admin results: `Admin\ResultsController` under `/admin/events/{event}/results/...`
   (`admin.results.category|round1|standings`, `admin` middleware — judges get 403). Pages
   `Admin/Results/{Category,Round,Standings}.jsx`; standings show weighted columns in
-  carry-over mode. `App\Support\AdminEventContext` picks the admin's event (URL → session →
-  latest started live → newest); the sidebar has an event picker (`nav.events`).
+  carry-over mode. `App\Support\AdminEventContext` takes the admin's event from the URL only
+  (no session memory, no fallback), so the events list and profile page have no event.
   `Navigation` builds the admin sections; shared `live` uses the admin's event.
 - Setting finalists: `Admin\FinalistController` (`admin.finalists.set`, POST
   `/admin/events/{event}/finalists`): admin password, 2-round events only, exactly
