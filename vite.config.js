@@ -10,6 +10,11 @@ export default defineConfig({
         }),
         react(),
     ],
+    build: {
+        // The only chunk over 500 kB is html2pdf (~950 kB), which PrintButton.jsx
+        // loads on demand when someone prints; page bundles stay far below this.
+        chunkSizeWarningLimit: 1000,
+    },
     /* server: {
         host: true,
         port: 5173,

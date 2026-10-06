@@ -41,9 +41,19 @@ Top 3 finalists, and print signed result sheets.
 - Performance: OPcache is enabled in `C:\xampp\php\php.ini` (web only; `opcache.enable_cli=0`,
   backup at `php.ini.bak-before-opcache`). `php artisan serve` on Windows handles one
   request at a time, so keep responses and static files small. `public/.htaccess` adds
-  gzip and cache headers, which only take effect if Apache serves the app.
-- Inertia 2 + React 18, Tailwind 3.4, Vite 7, `motion`, `lucide-react` icons, `sonner` toasts,
-  Ziggy `route()` helper available globally in JS.
+  gzip and cache headers, which only take effect if Apache serves the app. `server.php`
+  gzips/caches static files under `php artisan serve`; `App\Http\Middleware\CompressResponse`
+  (prepended globally in `bootstrap/app.php`) gzips HTML/JSON ≥ 1 KB for clients that accept
+  it (pages 20–35 KB → 3–5 KB; skips already-encoded, streamed and file responses). Pages
+  take 4–10 queries; keep it that way (bulk queries, `AdminQueryCountTest`). Autoloader is
+  optimized (`composer dump-autoload -o`; rerun after adding classes isn't required, PSR-4
+  falls back). Vite `chunkSizeWarningLimit` is 1000 only because lazy html2pdf is ~950 KB.
+- Inertia 2 + React 18, Tailwind 3.4 (+ `tailwindcss-animate` for `animate-in` CSS
+  animations), Vite 7, `lucide-react` icons, `sonner` toasts, Ziggy `route()` helper
+  available globally in JS. **`motion` is only for the landing/login backdrop and Dashboard
+  stars** — never import it in anything admin or judge pages load (sidebar, tabs,
+  ScoreInput, HoverBorderGradient are plain CSS); it costs ~35 KB gzipped per page. Use CSS
+  transitions/keyframes with `motion-reduce:` variants instead.
 - Windows + Git Bash: inline `node -e`/`sed` scripts mangle backslashes in PHP namespaces —
   use the Edit tool for PHP `use` lines. Python is available as `py -3` (not `python`).
 
@@ -93,8 +103,11 @@ Top 3 finalists, and print signed result sheets.
   fields by hand. Original photos:
   run **`npm run images`** (`scripts/optimize-images.mjs`, sharp) after replacing them.
   Uploads: the browser makes the three sizes (`lib/photoResize.js`).
-- `ScoreInput.jsx` animates the glow only while hovered/focused — don't bring back
-  always-running per-card animations. `backgrounds/stars.jsx` star counts were cut for
+- `ScoreInput.jsx` animates the glow only while hovered/focused, in pure CSS
+  (`group-hover`/`group-focus-within` + a spinning conic gradient; no React state, so hover
+  and focus don't re-render) — don't bring back always-running per-card animations or
+  JS-driven ones. `HoverBorderGradient` is likewise pure CSS (it used to re-render every
+  second via setInterval). `backgrounds/stars.jsx` star counts were cut for
   low-end devices.
 - Fonts are self-hosted (`@fontsource/figtree` in `app.jsx`, `@fontsource/orbitron` in
   `Welcome.jsx`) — no external font/CDN links; the event network may have no internet.

@@ -1,7 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
 import React, { useState, useEffect, useRef, createContext, useContext } from "react";
-import { AnimatePresence, motion } from "motion/react";
 import { Menu, X } from "lucide-react";
 import { router } from "@inertiajs/react";
 
@@ -53,15 +52,14 @@ export const SidebarBody = (props) => {
 export const DesktopSidebar = ({ className, children, ...props }) => {
     const { open, setOpen, animate } = useSidebar();
     return (
-        <motion.nav
+        // Width animates with a CSS transition (no animation library on every page).
+        <nav
             aria-label="Main"
             className={cn(
-                "h-full px-4 py-4 hidden  md:flex md:flex-col bg-neutral-100 dark:bg-neutral-800 w-[300px] shrink-0",
+                "h-full px-4 py-4 hidden md:flex md:flex-col bg-neutral-100 dark:bg-neutral-800 shrink-0 transition-[width] duration-200 ease-out motion-reduce:transition-none",
+                !animate || open ? "w-[300px]" : "w-[60px]",
                 className
             )}
-            animate={{
-                width: animate ? (open ? "300px" : "60px") : "300px",
-            }}
             onMouseEnter={() => setOpen(true)}
             onMouseLeave={() => setOpen(false)}
             // Keyboard users: expand while focus is inside, collapse when it leaves.
@@ -72,7 +70,7 @@ export const DesktopSidebar = ({ className, children, ...props }) => {
             {...props}
         >
             {children}
-        </motion.nav>
+        </nav>
     );
 };
 
@@ -122,17 +120,13 @@ export const MobileSidebar = ({ className, children, ...props }) => {
             >
                 <Menu className="h-6 w-6" aria-hidden="true" />
             </button>
-            <AnimatePresence>
-                {open && (
-                    <motion.nav
+            {/* Slides in with a CSS animation; closes instantly (exit faster than enter). */}
+            {open && (
+                    <nav
                         id="mobile-sidebar"
                         aria-label="Main"
-                        initial={{ x: "-100%", opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: "-100%", opacity: 0 }}
-                        transition={{ duration: 0.25, ease: "easeInOut" }}
                         className={cn(
-                            "fixed inset-0 z-[100] flex h-full w-full flex-col justify-between overflow-y-auto bg-neutral-100 p-4 pt-3 md:hidden dark:bg-neutral-900",
+                            "fixed inset-0 z-[100] flex h-full w-full flex-col justify-between overflow-y-auto bg-neutral-100 p-4 pt-3 md:hidden dark:bg-neutral-900 animate-in slide-in-from-left fade-in-0 duration-200 motion-reduce:animate-none",
                             className
                         )}
                     >
@@ -146,9 +140,8 @@ export const MobileSidebar = ({ className, children, ...props }) => {
                             <X className="h-6 w-6" aria-hidden="true" />
                         </button>
                         {children}
-                    </motion.nav>
-                )}
-            </AnimatePresence>
+                    </nav>
+            )}
         </div>
     );
 };
@@ -175,24 +168,17 @@ export const SidebarLink = ({ link, className, active = false, ...props }) => {
                 <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-full bg-amber-400" />
             )}
             {link.icon}
-            <motion.span
-                animate={{
-                    display: animate
-                        ? open
-                            ? "inline-block"
-                            : "none"
-                        : "inline-block",
-                    opacity: animate ? (open ? 1 : 0) : 1,
-                }}
+            <span
                 className={cn(
-                    "text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0",
+                    "text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre !p-0 !m-0 motion-reduce:transition-none",
+                    !animate || open ? "inline-block animate-in fade-in-0 duration-200 motion-reduce:animate-none" : "hidden",
                     active
                         ? "text-black dark:text-white font-semibold"
                         : "text-neutral-700 dark:text-neutral-200"
                 )}
             >
                 {link.label}
-            </motion.span>
+            </span>
         </a>
     );
 };
@@ -222,13 +208,9 @@ export const Logo = () => {
             </div>
 
             {/* Text label does not affect logo size */}
-            <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="font-medium whitespace-pre text-black dark:text-white"
-            >
+            <span className="font-medium whitespace-pre text-black dark:text-white animate-in fade-in-0 duration-200 motion-reduce:animate-none">
                 PITON Tabulation
-            </motion.span>
+            </span>
         </a>
     );
 };
@@ -265,19 +247,14 @@ export const SidebarHeader = ({ label = "Top 5 Selection" }) => {
 
     return (
         <div className="mt-8 px-4 text-sm font-bold uppercase text-neutral-500 dark:text-neutral-400 h-5">
-            <motion.span
-                animate={{
-                    display: animate
-                        ? open
-                            ? "inline-block"
-                            : "none"
-                        : "inline-block",
-                    opacity: animate ? (open ? 1 : 0) : 1,
-                }}
-                className="text-neutral-700 dark:text-neutral-200 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+            <span
+                className={cn(
+                    "text-neutral-700 dark:text-neutral-200 text-sm whitespace-pre !p-0 !m-0",
+                    !animate || open ? "inline-block animate-in fade-in-0 duration-200 motion-reduce:animate-none" : "hidden"
+                )}
             >
                 {label}
-            </motion.span>
+            </span>
         </div>
     );
 };
