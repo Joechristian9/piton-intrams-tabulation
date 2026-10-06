@@ -108,7 +108,7 @@ export default function Edit(props) {
                 </div>
 
                 <div role="tabpanel" className="max-w-3xl">
-                    {tab === "settings" && <Settings event={event} locks={locks} />}
+                    {tab === "settings" && <Settings event={event} locks={locks} themes={props.themes} />}
                     {tab === "groups" && <Groups event={event} groups={props.groups} />}
                     {tab === "categories" && <Categories event={event} categories={props.categories} locks={locks} />}
                     {tab === "candidates" && <Candidates event={event} groups={props.groups} candidates={props.candidates} />}

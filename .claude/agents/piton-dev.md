@@ -151,6 +151,37 @@ Top 3 finalists, and print signed result sheets.
 - Use the `ui-ux-pro-max` skill for visual/UX decisions, but brand wins: dark background,
   gold `yellow-400` primary with blue accents from the logo, Orbitron only for the PITON
   wordmark, Figtree elsewhere.
+- **Color themes:** keep writing `yellow-*` / `amber-*` (accent) and `neutral-*` (surfaces)
+  classes — `tailwind.config.js` maps them to CSS variables (`--accent-*`, `--accent2-*`,
+  `--surface-*`) that each preset in `resources/js/lib/themes.json` sets under
+  `[data-theme="<key>"]`; the first preset, `gold`, equals Tailwind's own colors. Never
+  hard-code hex for accents/surfaces or the theme won't apply. `gray-*`, `blue-*`, `red-*`
+  are not themed. **Themes are per event:** `events.theme` (preset key, `custom-{id}`, or
+  null = Default), picked in the event Settings tab (`Tabs/Settings.jsx` `ThemeOption`
+  radios; `themes` prop = `AppTheme::options()` on Events index + edit; validated, copied
+  by Duplicate; only updated when the field is sent). Judges get their event's theme;
+  admins get the theme of the event in the URL (`AdminEventContext`); everything else
+  (login, events list, Theme page, profile) and events on Default use the **default
+  theme**, set on `Pages/Admin/Theme.jsx` (`Admin\ThemeController`, `admin.theme.edit|update`,
+  sidebar Management → Theme; cards list the events using each theme) and saved in the
+  `settings` table. `AppTheme::resolve(?Event)` → event theme → saved default → `gold`
+  (also when a theme is gone or tables are missing). Changing the default, or editing a
+  custom theme, bumps the `event` live stamp of affected events so judges' pages reload.
+  Shared prop `theme` → `<html data-theme>` in `app.blade.php`, kept current by `app.jsx`.
+  Any element can preview a theme with its own `data-theme` (or inline variables).
+  To add a preset, add it to `themes.json` (accent/surface = Tailwind palette names) and
+  rebuild. The PDF report keeps its own fixed white style.
+- **Custom themes:** admins also create/edit/delete their own (`custom_themes`: name ≤ 40
+  unique, `accent` + `surface` hex; `App\Models\CustomTheme`, key `custom-{id}`; routes
+  `admin.themes.store|update|destroy`; it can't be deleted while it's the default or an
+  event uses it). Shades come from
+  the two colors via `resources/js/lib/themeScale.json` (accent = shade 400, background =
+  shade 900, others mixed toward white/black), computed by `App\Support\ThemeColors` (server)
+  and `lib/themeColors.js` (editor live preview) — keep them identical; both tests pin the
+  same numbers. Readability rules in both: black text on the accent ≥ 4.5:1, background
+  luminance ≤ 0.04, accent vs background ≥ 4.5:1. `AppTheme::resolve()` → shared props
+  `theme` + `themeVars` (custom theme CSS variables, else null), set inline on `<html>` by
+  `app.blade.php` and `app.jsx`.
 - Meet the basics: text contrast ≥ 4.5:1 (use `gray-400` or lighter on black, not
   `gray-500/600`), visible focus rings, ≥ 44px tap targets, `prefers-reduced-motion`
   respected, no horizontal scroll at 375px, SVG icons (no emoji).

@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Event;
 use App\Models\EventGroup;
 use App\Results\EventResults;
+use App\Support\AppTheme;
 use App\Support\EventLocks;
 use App\Support\LiveVersions;
 use Illuminate\Http\Request;
@@ -38,6 +39,8 @@ class EventController extends Controller
                     'judges' => $e->judges_count,
                     'hasScores' => (bool) $e->scores_exists,
                 ]),
+            // Theme choices for the "New event" form.
+            'themes' => AppTheme::options(),
         ]);
     }
 
@@ -58,8 +61,9 @@ class EventController extends Controller
 
         return Inertia::render('Admin/Events/Edit', [
             'event' => [
-                ...$event->only(['id', 'name', 'code', 'status', 'rounds', 'finalists_per_group', 'finals_from_zero', 'round1_weight', 'finals_weight']),
+                ...$event->only(['id', 'name', 'code', 'theme', 'status', 'rounds', 'finalists_per_group', 'finals_from_zero', 'round1_weight', 'finals_weight']),
             ],
+            'themes' => AppTheme::options(),
             'groups' => $event->groups()->withCount('candidates')->get()->map(fn ($g) => [
                 'id' => $g->id, 'name' => $g->name, 'position' => $g->position,
                 'candidates' => $g->candidates_count,
@@ -173,7 +177,7 @@ class EventController extends Controller
     {
         $copy = DB::transaction(function () use ($event) {
             $copy = Event::create([
-                ...$event->only(['rounds', 'finalists_per_group', 'finals_from_zero', 'round1_weight', 'finals_weight']),
+                ...$event->only(['rounds', 'finalists_per_group', 'finals_from_zero', 'round1_weight', 'finals_weight', 'theme']),
                 'name' => "Copy of {$event->name}",
                 'code' => $this->freeCode($event->code),
                 'status' => Event::SETUP,
@@ -203,6 +207,12 @@ class EventController extends Controller
             'finals_from_zero' => ['boolean'],
             'round1_weight' => ['nullable', 'integer', 'min:0', 'max:100'],
             'finals_weight' => ['nullable', 'integer', 'min:0', 'max:100'],
+            // null = the app's default theme.
+            'theme' => ['nullable', 'string', function ($attribute, $value, $fail) {
+                if (! AppTheme::exists($value)) {
+                    $fail("That theme doesn't exist any more. Pick another one.");
+                }
+            }],
         ]);
 
         $twoRounds = (int) $data['rounds'] === 2;
@@ -220,6 +230,8 @@ class EventController extends Controller
             'finals_from_zero' => $fromZero,
             'round1_weight' => $fromZero ? null : (int) $data['round1_weight'],
             'finals_weight' => $fromZero ? null : (int) $data['finals_weight'],
+            // Only when sent, so a form without the field keeps the event's theme.
+            ...($request->has('theme') ? ['theme' => $data['theme'] ?? null] : []),
         ];
     }
 

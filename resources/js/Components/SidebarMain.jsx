@@ -20,6 +20,7 @@ import {
     BellRing,
     CalendarDays,
     Medal,
+    Palette,
 } from "lucide-react";
 
 // Icon keys sent by the server-built nav (see app/Support/Navigation.php).
@@ -29,6 +30,7 @@ const NAV_ICONS = {
     medal: Medal,
     events: CalendarDays,
     bell: BellRing,
+    palette: Palette,
     users: Users,
 };
 

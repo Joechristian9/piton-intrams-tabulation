@@ -22,7 +22,7 @@ class Navigation
         if ($user?->role === 'admin') {
             return $adminEvent ? self::admin($adminEvent) : [
                 'event' => null,
-                'sections' => [['label' => 'Management', 'items' => [self::eventsItem()]]],
+                'sections' => [['label' => 'Management', 'items' => [self::eventsItem(), self::themeItem()]]],
             ];
         }
 
@@ -54,6 +54,7 @@ class Navigation
         $sections[] = ['label' => 'Management', 'items' => [
             self::eventsItem(),
             ['label' => 'Notify Judges', 'href' => route('admin.notify', $event, false), 'icon' => 'bell'],
+            self::themeItem(),
         ]];
 
         return [
@@ -65,6 +66,11 @@ class Navigation
     private static function eventsItem(): array
     {
         return ['label' => 'Events', 'href' => route('admin.events.index', [], false), 'icon' => 'events'];
+    }
+
+    private static function themeItem(): array
+    {
+        return ['label' => 'Theme', 'href' => route('admin.theme.edit', [], false), 'icon' => 'palette'];
     }
 
     private static function judge(Event $event): array

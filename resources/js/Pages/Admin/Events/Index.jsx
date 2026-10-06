@@ -12,7 +12,7 @@ import { STATUS_STYLES } from "@/lib/eventStatus";
 const button =
     "inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-600 bg-neutral-800 px-3 text-sm hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 disabled:cursor-not-allowed disabled:opacity-40";
 
-export default function Index({ events = [] }) {
+export default function Index({ events = [], themes = null }) {
     const [creating, setCreating] = useState(false);
     const { ask, dialogProps } = usePasswordAction();
 
@@ -130,7 +130,7 @@ export default function Index({ events = [] }) {
             <Modal show={creating} onClose={() => setCreating(false)} maxWidth="lg">
                 <div className="bg-neutral-900 p-6">
                     <h2 className="mb-4 text-lg font-semibold text-white">New event</h2>
-                    <Settings onDone={() => setCreating(false)} />
+                    <Settings themes={themes} onDone={() => setCreating(false)} />
                 </div>
             </Modal>
 

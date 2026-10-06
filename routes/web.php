@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\GroupController;
 use App\Http\Controllers\Admin\NotifyController;
 use App\Http\Controllers\Admin\ResultsController;
 use App\Http\Controllers\Admin\ScoreSubmissionController as AdminScoreSubmissionController;
+use App\Http\Controllers\Admin\ThemeController;
 use App\Http\Controllers\Judge\HomeController;
 use App\Http\Controllers\Judge\NotificationController;
 use App\Http\Controllers\Judge\ScoringController;
@@ -59,6 +60,13 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::put('/admin/judges/{judge}', [EventJudgeController::class, 'update'])->name('admin.event-judges.update');
     Route::post('/admin/judges/{judge}/reset-password', [EventJudgeController::class, 'reset'])->name('admin.event-judges.reset');
     Route::delete('/admin/judges/{judge}', [EventJudgeController::class, 'destroy'])->name('admin.event-judges.destroy');
+
+    // The app-wide color theme.
+    Route::get('/admin/theme', [ThemeController::class, 'edit'])->name('admin.theme.edit');
+    Route::put('/admin/theme', [ThemeController::class, 'update'])->name('admin.theme.update');
+    Route::post('/admin/themes', [ThemeController::class, 'store'])->name('admin.themes.store');
+    Route::put('/admin/themes/{customTheme}', [ThemeController::class, 'updateCustom'])->name('admin.themes.update');
+    Route::delete('/admin/themes/{customTheme}', [ThemeController::class, 'destroy'])->name('admin.themes.destroy');
 });
 
 // Admins: one event's results, finalists, notifications and live submission alerts.

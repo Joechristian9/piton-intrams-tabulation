@@ -98,7 +98,10 @@ class NavigationTest extends TestCase
 
         $this->assertSame(['event' => null, 'sections' => [[
             'label' => 'Management',
-            'items' => [['label' => 'Events', 'href' => route('admin.events.index', [], false), 'icon' => 'events']],
+            'items' => [
+                ['label' => 'Events', 'href' => route('admin.events.index', [], false), 'icon' => 'events'],
+                ['label' => 'Theme', 'href' => route('admin.theme.edit', [], false), 'icon' => 'palette'],
+            ],
         ]]], Navigation::for($admin, null));
     }
 

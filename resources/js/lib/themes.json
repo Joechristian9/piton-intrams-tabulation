@@ -1,0 +1,52 @@
+[
+    {
+        "key": "gold",
+        "label": "PITON Gold",
+        "description": "The original look: gold on charcoal.",
+        "accent": "yellow",
+        "accent2": "amber",
+        "surface": "neutral"
+    },
+    {
+        "key": "blue",
+        "label": "Royal Blue",
+        "description": "Bright blue on cool slate, from the logo's blue.",
+        "accent": "blue",
+        "surface": "slate"
+    },
+    {
+        "key": "ice",
+        "label": "Ice",
+        "description": "Cyan on slate.",
+        "accent": "cyan",
+        "surface": "slate"
+    },
+    {
+        "key": "emerald",
+        "label": "Emerald",
+        "description": "Green on graphite.",
+        "accent": "emerald",
+        "surface": "zinc"
+    },
+    {
+        "key": "violet",
+        "label": "Violet",
+        "description": "Purple on graphite.",
+        "accent": "violet",
+        "surface": "zinc"
+    },
+    {
+        "key": "crimson",
+        "label": "Crimson",
+        "description": "Rose red on charcoal.",
+        "accent": "rose",
+        "surface": "neutral"
+    },
+    {
+        "key": "sunset",
+        "label": "Sunset",
+        "description": "Orange on warm stone.",
+        "accent": "orange",
+        "surface": "stone"
+    }
+]
