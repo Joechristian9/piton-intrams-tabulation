@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Support\EventLocks;
 use App\Support\LiveVersions;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -83,6 +84,7 @@ class CategoryController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:80'],
+            'icon' => ['nullable', 'string', Rule::in(Category::iconKeys())],
             'round' => ['required', 'integer', 'min:1', 'max:' . $event->rounds],
             'max_score' => ['required', 'numeric', 'min:0.01', 'max:999.99'],
             ...($withPosition ? ['position' => ['required', 'integer', 'min:1', 'max:999']] : []),

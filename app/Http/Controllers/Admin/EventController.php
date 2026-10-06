@@ -65,7 +65,7 @@ class EventController extends Controller
                 'candidates' => $g->candidates_count,
             ]),
             'categories' => $categories->map(fn ($c) => [
-                'id' => $c->id, 'round' => $c->round, 'name' => $c->name,
+                'id' => $c->id, 'round' => $c->round, 'name' => $c->name, 'icon' => $c->icon,
                 'max_score' => (float) $c->max_score, 'position' => $c->position,
                 'hasScores' => (bool) $c->scores_exists,
             ]),
@@ -183,7 +183,7 @@ class EventController extends Controller
                 EventGroup::create(['event_id' => $copy->id, ...$group->only(['name', 'position'])]);
             }
             foreach ($event->categories as $category) {
-                Category::create(['event_id' => $copy->id, ...$category->only(['round', 'name', 'max_score', 'position'])]);
+                Category::create(['event_id' => $copy->id, ...$category->only(['round', 'name', 'icon', 'max_score', 'position'])]);
             }
 
             return $copy;

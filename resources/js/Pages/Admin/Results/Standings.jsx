@@ -1,4 +1,5 @@
 import React from "react";
+import candidateName from "@/lib/candidateName";
 import PageLayout from "@/Layouts/PageLayout";
 import TopFiveSelectionTable from "@/Pages/Admin/Partials/TopFiveSelectionTable";
 import PrintButton from "@/Pages/Admin/Partials/PrintButton";
@@ -46,13 +47,13 @@ function WeightedTable({ group, weights, judges, title }) {
                                         <CandidatePhoto
                                             path={r.candidate.profile_img}
                                             size="thumb"
-                                            alt={`${r.candidate.first_name} ${r.candidate.last_name}`}
+                                            alt={candidateName(r.candidate)}
                                             width={32}
                                             height={32}
                                             className="h-8 w-8 rounded-full object-cover"
                                         />
                                         <span>
-                                            {r.candidate.first_name} {r.candidate.last_name}
+                                            {candidateName(r.candidate)}
                                         </span>
                                     </div>
                                 </TableCell>

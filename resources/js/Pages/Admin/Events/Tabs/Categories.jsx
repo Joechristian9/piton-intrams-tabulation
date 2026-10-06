@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Trash2, Wand2 } from "lucide-react";
+import Modal from "@/Components/Modal";
+import { CATEGORY_ICONS, autoIconKey } from "@/lib/categoryIcon";
+import { cn } from "@/lib/utils";
 import send from "./request";
 
 const input =
@@ -7,13 +10,83 @@ const input =
 const icon =
     "grid h-11 w-11 place-items-center rounded-lg border border-neutral-600 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed";
 
-function CategoryRow({ category, index, count, swap }) {
+// The sidebar icon of a category: a button showing the current icon that opens a grid
+// of choices. "Auto" (value null) picks one from the name, as the sidebar does.
+function IconPicker({ value, name, autoIndex, onChange }) {
+    const [open, setOpen] = useState(false);
+    const autoKey = autoIconKey(name, autoIndex);
+    const current = CATEGORY_ICONS[value] ?? CATEGORY_ICONS[autoKey];
+    const Current = current.icon;
+
+    const choose = (key) => {
+        setOpen(false);
+        if (key !== value) onChange(key);
+    };
+
+    const option = (key, Icon, label, selected) => (
+        <button
+            key={key ?? "auto"}
+            type="button"
+            onClick={() => choose(key)}
+            aria-pressed={selected}
+            title={label}
+            className={cn(
+                "flex min-h-16 flex-col items-center justify-center gap-1 rounded-lg border p-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400",
+                selected
+                    ? "border-yellow-400 bg-yellow-400/10 text-yellow-300"
+                    : "border-neutral-700 bg-neutral-800 text-gray-200 hover:bg-neutral-700",
+            )}
+        >
+            <Icon className="h-6 w-6" aria-hidden="true" />
+            <span className="w-full truncate text-center">{label}</span>
+        </button>
+    );
+
+    return (
+        <>
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                aria-label={`Icon: ${value ? current.label : `Auto (${current.label})`}. Change icon`}
+                title="Change icon"
+                className={cn(icon, "relative text-yellow-300")}
+            >
+                <Current className="h-5 w-5" aria-hidden="true" />
+                {!value && (
+                    <Wand2 className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full bg-neutral-900 p-0.5 text-gray-300" aria-hidden="true" />
+                )}
+            </button>
+            {open && (
+                <Modal show onClose={() => setOpen(false)} maxWidth="lg">
+                    <div className="bg-neutral-900 p-6 text-white">
+                        <h2 className="text-lg font-semibold">Icon for {name || "new category"}</h2>
+                        <p className="mt-1 text-sm text-gray-400">Shown next to the category in the sidebar.</p>
+                        <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6">
+                            {option(null, CATEGORY_ICONS[autoKey].icon, "Auto", !value)}
+                            {Object.entries(CATEGORY_ICONS).map(([key, { icon: Icon, label }]) =>
+                                option(key, Icon, label, value === key),
+                            )}
+                        </div>
+                        <div className="mt-4 flex justify-end">
+                            <button type="button" onClick={() => setOpen(false)} className="min-h-11 rounded-lg border border-neutral-600 bg-neutral-800 px-4 font-semibold hover:bg-neutral-700">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+        </>
+    );
+}
+
+function CategoryRow({ category, index, autoIndex, count, swap }) {
     const [name, setName] = useState(category.name);
     const [max, setMax] = useState(category.max_score);
 
     const save = (next) =>
         send("put", route("admin.categories.update", category.id), {
             name: category.name,
+            icon: category.icon,
             round: category.round,
             max_score: category.max_score,
             position: category.position,
@@ -22,6 +95,7 @@ function CategoryRow({ category, index, count, swap }) {
 
     return (
         <li className="flex flex-wrap items-center gap-2 rounded-lg border border-neutral-700 p-3">
+            <IconPicker value={category.icon} name={name} autoIndex={autoIndex} onChange={(key) => save({ icon: key })} />
             <input
                 aria-label="Category name"
                 className={`${input} min-w-40 flex-1`}
@@ -65,14 +139,15 @@ function CategoryRow({ category, index, count, swap }) {
     );
 }
 
-function RoundSection({ event, round, label, categories, locked }) {
+function RoundSection({ event, round, label, categories, firstIndex, locked }) {
     const [name, setName] = useState("");
     const [max, setMax] = useState("");
+    const [newIcon, setNewIcon] = useState(null);
     const total = categories.reduce((sum, c) => sum + Number(c.max_score), 0);
 
     const swap = (a, b) => {
         const [first, second] = [categories[a], categories[b]];
-        const fields = (c, position) => ({ name: c.name, round: c.round, max_score: c.max_score, position });
+        const fields = (c, position) => ({ name: c.name, icon: c.icon, round: c.round, max_score: c.max_score, position });
         send("put", route("admin.categories.update", first.id), fields(first, second.position), null, () =>
             send("put", route("admin.categories.update", second.id), fields(second, first.position))
         );
@@ -81,9 +156,10 @@ function RoundSection({ event, round, label, categories, locked }) {
     const add = (e) => {
         e.preventDefault();
         if (!name.trim() || !max) return;
-        send("post", route("admin.categories.store", event.id), { name, round, max_score: max }, "Category added.");
+        send("post", route("admin.categories.store", event.id), { name, icon: newIcon, round, max_score: max }, "Category added.");
         setName("");
         setMax("");
+        setNewIcon(null);
     };
 
     return (
@@ -94,13 +170,14 @@ function RoundSection({ event, round, label, categories, locked }) {
             </div>
             <ul className="space-y-2">
                 {categories.map((c, i) => (
-                    <CategoryRow key={`${c.id}-${c.position}-${c.name}-${c.max_score}`} category={c} index={i} count={categories.length} swap={swap} />
+                    <CategoryRow key={`${c.id}-${c.position}-${c.name}-${c.max_score}`} category={c} index={i} autoIndex={firstIndex + i} count={categories.length} swap={swap} />
                 ))}
             </ul>
             {locked ? (
                 <p className="text-sm text-gray-400">This round already has scores, so no new categories can be added.</p>
             ) : (
                 <form onSubmit={add} className="flex flex-wrap gap-2">
+                    <IconPicker value={newIcon} name={name} autoIndex={firstIndex + categories.length} onChange={setNewIcon} />
                     <input aria-label="New category name" placeholder="Category name" className={`${input} min-w-40 flex-1`} value={name} onChange={(e) => setName(e.target.value)} />
                     <input type="number" min="0.01" max="999.99" step="0.01" aria-label="Max points" placeholder="Max" className={`${input} w-24`} value={max} onChange={(e) => setMax(e.target.value)} />
                     <button type="submit" className="inline-flex min-h-11 items-center gap-1 rounded-lg bg-yellow-400 px-4 font-semibold text-black hover:bg-yellow-300">
@@ -126,6 +203,8 @@ export default function Categories({ event, categories, locks }) {
                     round={round}
                     label={label}
                     categories={categories.filter((c) => c.round === round)}
+                    // Auto icons are numbered across the whole menu, round 1 first (like the sidebar).
+                    firstIndex={categories.filter((c) => c.round < round).length}
                     locked={Boolean(locks.roundHasScores?.[round])}
                 />
             ))}

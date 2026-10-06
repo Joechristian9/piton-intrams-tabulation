@@ -10,6 +10,7 @@ import {
     SidebarHeader,
 } from "@/Components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import categoryIcon from "@/lib/categoryIcon";
 import {
     ListChecks,
     LogOut,
@@ -18,12 +19,14 @@ import {
     Users,
     BellRing,
     CalendarDays,
+    Medal,
 } from "lucide-react";
 
 // Icon keys sent by the server-built nav (see app/Support/Navigation.php).
+// Categories get the icon the admin picked, else one from their name (lib/categoryIcon.js).
 const NAV_ICONS = {
-    category: ListChecks,
     trophy: Trophy,
+    medal: Medal,
     events: CalendarDays,
     bell: BellRing,
     users: Users,
@@ -46,10 +49,21 @@ export default function SidebarMain({ children }) {
 
     const currentPath = url.split("?")[0];
 
+    // Position of each category in the whole menu, so unmatched names still get distinct icons.
+    const categoryIndex = new Map(
+        nav.sections
+            .flatMap((s) => s.items)
+            .filter((item) => item.icon === "category")
+            .map((item, i) => [item.href, i]),
+    );
+
     const renderNavItems = (items) =>
         items.map((item) => {
             const active = item.href === currentPath;
-            const Icon = NAV_ICONS[item.icon] ?? ListChecks;
+            const Icon =
+                item.icon === "category"
+                    ? categoryIcon(item.label, categoryIndex.get(item.href), item.iconKey)
+                    : (NAV_ICONS[item.icon] ?? ListChecks);
 
             return (
                 <SidebarLink
@@ -70,6 +84,7 @@ export default function SidebarMain({ children }) {
                         href: item.href,
                         onClick: (e) => {
                             e.preventDefault();
+                            setOpen(false); // close the phone menu panel
                             router.get(item.href);
                         },
                     }}
@@ -160,9 +175,9 @@ export default function SidebarMain({ children }) {
                     </SidebarBody>
                 </Sidebar>
 
-                <div className="flex h-full flex-1 flex-col overflow-y-auto border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
+                <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
                     {children}
-                </div>
+                </main>
             </div>
         </div>
     );

@@ -87,7 +87,10 @@ Top 3 finalists, and print signed result sheets.
   content from current props.
 - Candidate photos: always render through `Components/CandidatePhoto.jsx` (`size="card"` or
   `"thumb"`); it maps `candidates/<gender>/<n>.JPEG` and `uploads/candidates/<event>/<uuid>.jpg`
-  to their `.webp` / `-thumb.webp` siblings (a missing WebP breaks the image). Original photos:
+  to their `.webp` / `-thumb.webp` siblings (a missing WebP breaks the image). An empty
+  `profile_img` (candidate added without a photo) shows `public/candidate-placeholder.svg`.
+  Show names with `lib/candidateName.js` ("First Last Suffix") — never concatenate the
+  fields by hand. Original photos:
   run **`npm run images`** (`scripts/optimize-images.mjs`, sharp) after replacing them.
   Uploads: the browser makes the three sizes (`lib/photoResize.js`).
 - `ScoreInput.jsx` animates the glow only while hovered/focused — don't bring back
@@ -120,7 +123,17 @@ Top 3 finalists, and print signed result sheets.
   (finals section only after finalists are set). Admins land on the Events list after login
   (`HomeController` redirects them); outside an event the sidebar shows only Management →
   Events; inside one (any URL with `{event}` or `{category}`) it shows the event name, its
-  result pages, and Management (Events, Notify Judges). There is no event picker. Landing page `Pages/Welcome.jsx` —
+  result pages, and Management (Events, Notify Judges). There is no event picker. The
+  sidebar UI is `Components/ui/sidebar.jsx`: on desktop (md+) it expands on hover or keyboard
+  focus; below md a top bar has a menu button (lucide `Menu`/`X`, 44px, Escape closes, focus
+  moves in and back) that opens a full-screen panel, which closes on navigation. Nav icon keys
+  map in `SidebarMain.jsx` `NAV_ICONS` (medal = Top N results, trophy = Final Standings,
+  events, bell). `category` items carry `iconKey` = `categories.icon` (admin-picked in the
+  Categories setup tab's `IconPicker`; allowed even after scoring) or null = Auto, picked from
+  the name by `lib/categoryIcon.js` (keyword list in order; unmatched names cycle fallbacks by
+  menu position). Pickable keys live in `lib/categoryIcons.json`, which `Category::iconKeys()`
+  validates against; `CATEGORY_ICONS` in `categoryIcon.js` must have the same keys
+  (`tests/js/categoryIcon.test.mjs`). To add an icon, add it to both. Use lucide only. Landing page `Pages/Welcome.jsx` —
   keep it general and minimal (logo, title, org name, tagline, one login CTA, footer
   "© year Darryl Tamayo & Andrei Sam Pambid").
 - Login and other account pages: `Layouts/GuestLayout.jsx` is a dark PITON shell (adds the
@@ -190,8 +203,10 @@ Top 3 finalists, and print signed result sheets.
   takes no new categories, added or moved in). Setup tabs `Pages/Admin/Events/Tabs/{Groups,Categories}.jsx` use
   `Tabs/request.js` (`send(method, url, data, toast, then)` — chain dependent requests).
 - Candidates: `Admin\CandidateController` (`admin.candidates.*`; update is PUT via POST +
-  `_method` for multipart). Numbers unique per group; photo = `photo` (JPEG ≤ 5 MB) +
-  `photo_card` (WebP ≤ 1 MB) + `photo_thumb` (WebP ≤ 200 KB), required together, stored as
+  `_method` for multipart). Numbers unique per group; optional `name_suffix` (≤ 20, e.g.
+  "Jr."). The photo is optional (none = `profile_img` `''`, shown as the placeholder); when
+  given, `photo` (JPEG ≤ 5 MB) + `photo_card` (WebP ≤ 1 MB) + `photo_thumb` (WebP ≤ 200 KB)
+  come together, stored as
   `uploads/candidates/{event}/{uuid}.jpg|.webp|-thumb.webp`; replacing/deleting removes old
   upload files only after the save succeeds (a failed save removes the new files instead) and
   never touches `public/candidates/`. Scored candidates can't be deleted or

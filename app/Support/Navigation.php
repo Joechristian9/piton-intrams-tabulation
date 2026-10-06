@@ -8,6 +8,7 @@ use App\Models\User;
 /**
  * Sidebar items for the current user, shared with every page as `nav`:
  * ['event' => ['id', 'name', 'status'] | null, 'sections' => [['label', 'items' => [['label', 'href', 'icon']]]]].
+ * Category items also carry `iconKey`: the icon the admin picked, or null (picked from the name).
  * Hrefs are relative paths, so the sidebar can mark the active item by URL.
  */
 class Navigation
@@ -35,6 +36,7 @@ class Navigation
             'label' => $category->name,
             'href' => route('admin.results.category', [$event, $category], false),
             'icon' => 'category',
+            'iconKey' => $category->icon,
         ])->all();
         $standings = ['label' => 'Final Standings', 'href' => route('admin.results.standings', $event, false), 'icon' => 'trophy'];
 
@@ -43,7 +45,7 @@ class Navigation
             : [
                 ['label' => "Top {$n} Selection", 'items' => [
                     ...$resultItems(1),
-                    ['label' => "Top {$n} Selection Results", 'href' => route('admin.results.round1', $event, false), 'icon' => 'trophy'],
+                    ['label' => "Top {$n} Selection Results", 'href' => route('admin.results.round1', $event, false), 'icon' => 'medal'],
                 ]],
                 ['label' => "Top {$n} Finalist", 'items' => [...$resultItems(2), $standings]],
             ];
@@ -93,6 +95,7 @@ class Navigation
             'label' => $category->name,
             'href' => route('score.show', $category, false),
             'icon' => 'category',
+            'iconKey' => $category->icon,
         ])->all();
     }
 }

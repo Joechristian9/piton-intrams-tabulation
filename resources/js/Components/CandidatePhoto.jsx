@@ -11,7 +11,8 @@ const UPLOADED_PHOTO = /^(uploads\/candidates\/\d+)\/([0-9a-f-]+)\.jpg$/i;
 export default function CandidatePhoto({ path, size = "card", alt, className, ...props }) {
     // Stored paths look like "candidates/female/1.jpg" (sometimes "admin/..." or "/...").
     const clean = (path || "").replace(/^\/+/, "").replace(/^admin\//, "");
-    const src = clean ? `/${clean}` : "/default-avatar.png";
+    // Candidates added without a photo have an empty path: show the silhouette placeholder.
+    const src = clean ? `/${clean}` : "/candidate-placeholder.svg";
 
     const match = clean.match(LOCAL_PHOTO) ?? clean.match(UPLOADED_PHOTO);
     const webp = match

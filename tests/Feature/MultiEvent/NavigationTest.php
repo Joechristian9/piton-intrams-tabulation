@@ -32,8 +32,8 @@ class NavigationTest extends TestCase
         $this->assertSame(['id' => $event->id, 'name' => $event->name, 'status' => Event::LIVE], $nav['event']);
         $this->assertSame(['Top 3 Selection'], array_column($nav['sections'], 'label'));
         $this->assertSame([
-            ['label' => 'Production Number', 'href' => route('score.show', $this->category($event, 'Production Number'), false), 'icon' => 'category'],
-            ['label' => 'Swim Wear', 'href' => route('score.show', $this->category($event, 'Swim Wear'), false), 'icon' => 'category'],
+            ['label' => 'Production Number', 'href' => route('score.show', $this->category($event, 'Production Number'), false), 'icon' => 'category', 'iconKey' => null],
+            ['label' => 'Swim Wear', 'href' => route('score.show', $this->category($event, 'Swim Wear'), false), 'icon' => 'category', 'iconKey' => null],
         ], $nav['sections'][0]['items']);
     }
 

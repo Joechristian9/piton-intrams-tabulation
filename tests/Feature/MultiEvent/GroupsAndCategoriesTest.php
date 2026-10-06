@@ -84,6 +84,34 @@ class GroupsAndCategoriesTest extends TestCase
         $this->assertSame(['Swimsuit', 30.0, 1], [$swim->fresh()->name, $swim->fresh()->max_score, $swim->fresh()->position]);
     }
 
+    public function test_admin_picks_a_category_icon_even_after_scoring_and_duplicates_keep_it(): void
+    {
+        $this->as()->post(route('admin.categories.store', $this->event), ['name' => 'Talent', 'icon' => 'star', 'round' => 1, 'max_score' => 20])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('star', $this->category($this->event, 'Talent')->icon);
+
+        // Icons are cosmetic, so a scored category can still change its icon.
+        $this->scoreIn('Sports Wear');
+        $sports = $this->category($this->event, 'Sports Wear');
+        $this->as()->put(route('admin.categories.update', $sports), ['name' => 'Sports Wear', 'icon' => 'dumbbell', 'round' => 1, 'max_score' => 25, 'position' => 1])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('dumbbell', $sports->fresh()->icon);
+
+        // Saving without an icon field leaves it alone; null resets to Auto.
+        $this->as()->put(route('admin.categories.update', $sports), ['name' => 'Sports Attire', 'round' => 1, 'max_score' => 25, 'position' => 1]);
+        $this->assertSame('dumbbell', $sports->fresh()->icon);
+        $this->as()->put(route('admin.categories.update', $sports), ['name' => 'Sports Attire', 'icon' => null, 'round' => 1, 'max_score' => 25, 'position' => 1]);
+        $this->assertNull($sports->fresh()->icon);
+
+        $this->as()->post(route('admin.categories.store', $this->event), ['name' => 'X', 'icon' => 'not-an-icon', 'round' => 1, 'max_score' => 5])
+            ->assertSessionHasErrors('icon');
+
+        $this->as()->post(route('admin.events.duplicate', $this->event));
+        $copy = Event::where('id', '!=', $this->event->id)->sole();
+        $this->assertSame('star', $copy->categories->firstWhere('name', 'Talent')->icon);
+        $this->assertSame('star', \App\Support\Navigation::for($this->admin, $copy)['sections'][0]['items'][1]['iconKey']);
+    }
+
     public function test_category_values_are_validated(): void
     {
         $this->as()->post(route('admin.categories.store', $this->event), ['name' => '', 'round' => 1, 'max_score' => 25])->assertSessionHasErrors('name');

@@ -24,7 +24,8 @@ class CandidateController extends Controller
     public function store(Request $request, Event $event)
     {
         $data = $this->validated($request, $event, null);
-        $photo = $this->storePhotos($request, $event);
+        // No photo: an empty path, which CandidatePhoto.jsx shows as a placeholder.
+        $photo = $request->hasFile('photo') ? $this->storePhotos($request, $event) : '';
 
         try {
             Candidate::create([...$data, 'event_id' => $event->id, 'profile_img' => $photo]);
@@ -84,8 +85,6 @@ class CandidateController extends Controller
 
     private function validated(Request $request, Event $event, ?Candidate $candidate): array
     {
-        $photoRule = $candidate ? 'nullable' : 'required';
-
         $data = $request->validate([
             'group_id' => ['required', 'integer', Rule::exists('event_groups', 'id')->where('event_id', $event->id)],
             'candidate_number' => [
@@ -94,16 +93,18 @@ class CandidateController extends Controller
             ],
             'first_name' => ['required', 'string', 'max:80'],
             'last_name' => ['required', 'string', 'max:80'],
+            'name_suffix' => ['nullable', 'string', 'max:20'],
             'course' => ['nullable', 'string', 'max:160'],
-            'photo' => [$photoRule, 'file', 'mimes:jpg,jpeg', 'max:5120'],
-            'photo_card' => [$photoRule, 'required_with:photo', 'file', 'mimes:webp', 'max:1024'],
-            'photo_thumb' => [$photoRule, 'required_with:photo', 'file', 'mimes:webp', 'max:200'],
+            // The photo is optional; when given, all three sizes come together.
+            'photo' => ['nullable', 'file', 'mimes:jpg,jpeg', 'max:5120'],
+            'photo_card' => ['nullable', 'required_with:photo', 'file', 'mimes:webp', 'max:1024'],
+            'photo_thumb' => ['nullable', 'required_with:photo', 'file', 'mimes:webp', 'max:200'],
         ], [
             'photo.mimes' => "This photo format isn't supported. Use a JPG or PNG.",
             'photo.max' => 'The photo is too large (5 MB at most).',
         ]);
 
-        return collect($data)->only(['group_id', 'candidate_number', 'first_name', 'last_name', 'course'])->all();
+        return collect($data)->only(['group_id', 'candidate_number', 'first_name', 'last_name', 'name_suffix', 'course'])->all();
     }
 
     /** Stores the three sizes; returns the path saved in `profile_img`. */

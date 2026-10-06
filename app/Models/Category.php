@@ -13,7 +13,15 @@ class Category extends Model
     /** @use HasFactory<\Database\Factories\CategoryFactory> */
     use HasFactory;
 
-    protected $fillable = ['event_id', 'round', 'name', 'max_score', 'position'];
+    protected $fillable = ['event_id', 'round', 'name', 'icon', 'max_score', 'position'];
+
+    /** Icon keys an admin can pick (shared with the sidebar's icon map); null icon = from the name. */
+    public static function iconKeys(): array
+    {
+        static $keys;
+
+        return $keys ??= json_decode(file_get_contents(resource_path('js/lib/categoryIcons.json')), true);
+    }
 
     protected function casts(): array
     {

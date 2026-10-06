@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import candidateName from "@/lib/candidateName";
 import { HoverBorderGradient } from "@/Components/ui/hover-border-gradient";
 import {
     AlertDialog,
@@ -73,13 +74,13 @@ const ScoreAlertDialog = ({
                                             <CandidatePhoto
                                                 path={c.profile_img}
                                                 size="thumb"
-                                                alt={`${c.first_name} ${c.last_name}`}
+                                                alt={candidateName(c)}
                                                 width={24}
                                                 height={24}
                                                 className="w-6 h-6 rounded-full object-cover"
                                             />
                                             <span>
-                                                {c.first_name} {c.last_name}
+                                                {candidateName(c)}
                                             </span>
                                         </div>
                                     </td>

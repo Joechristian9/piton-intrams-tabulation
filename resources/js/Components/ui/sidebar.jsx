@@ -1,8 +1,8 @@
 "use client";
 import { cn } from "@/lib/utils";
-import React, { useState, createContext, useContext } from "react";
+import React, { useState, useEffect, useRef, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { IconMenu2, IconX } from "@tabler/icons-react";
+import { Menu, X } from "lucide-react";
 import { router } from "@inertiajs/react";
 
 const SidebarContext = createContext(undefined);
@@ -53,68 +53,103 @@ export const SidebarBody = (props) => {
 export const DesktopSidebar = ({ className, children, ...props }) => {
     const { open, setOpen, animate } = useSidebar();
     return (
-        <>
-            <motion.div
-                className={cn(
-                    "h-full px-4 py-4 hidden  md:flex md:flex-col bg-neutral-100 dark:bg-neutral-800 w-[300px] shrink-0",
-                    className
-                )}
-                animate={{
-                    width: animate ? (open ? "300px" : "60px") : "300px",
-                }}
-                onMouseEnter={() => setOpen(true)}
-                onMouseLeave={() => setOpen(false)}
-                {...props}
-            >
-                {children}
-            </motion.div>
-        </>
+        <motion.nav
+            aria-label="Main"
+            className={cn(
+                "h-full px-4 py-4 hidden  md:flex md:flex-col bg-neutral-100 dark:bg-neutral-800 w-[300px] shrink-0",
+                className
+            )}
+            animate={{
+                width: animate ? (open ? "300px" : "60px") : "300px",
+            }}
+            onMouseEnter={() => setOpen(true)}
+            onMouseLeave={() => setOpen(false)}
+            // Keyboard users: expand while focus is inside, collapse when it leaves.
+            onFocus={() => setOpen(true)}
+            onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false);
+            }}
+            {...props}
+        >
+            {children}
+        </motion.nav>
     );
 };
 
+// Phones and small tablets: a top bar with a menu button that opens the
+// sidebar as a full-screen panel (Escape or the close button shuts it).
 export const MobileSidebar = ({ className, children, ...props }) => {
     const { open, setOpen } = useSidebar();
+    const menuButton = useRef(null);
+    const closeButton = useRef(null);
+    const wasOpen = useRef(false);
+
+    useEffect(() => {
+        if (!open) {
+            if (wasOpen.current) menuButton.current?.focus();
+            wasOpen.current = false;
+            return;
+        }
+        // Only the visible (mobile) panel takes focus; on desktop it isn't rendered.
+        if (!closeButton.current?.offsetParent) return;
+        wasOpen.current = true;
+        closeButton.current.focus();
+        const onKey = (e) => e.key === "Escape" && setOpen(false);
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, [open, setOpen]);
+
     return (
-        <>
-            <div
-                className={cn(
-                    "h-10 px-4 py-4 flex flex-row md:hidden  items-center justify-between bg-neutral-100 dark:bg-neutral-800 w-full"
-                )}
-                {...props}
+        <div
+            className="flex h-14 w-full shrink-0 items-center justify-between border-b border-neutral-200 bg-neutral-100 px-4 md:hidden dark:border-neutral-700 dark:bg-neutral-800"
+            {...props}
+        >
+            <span className="flex min-w-0 items-center gap-2">
+                <picture className="contents">
+                    <source srcSet="/piton-logo.webp" type="image/webp" />
+                    <img src="/PITON%20LOGO.png" alt="" width={28} height={28} className="h-7 w-7 shrink-0 object-contain" />
+                </picture>
+                <span className="truncate font-medium text-black dark:text-white">PITON Tabulation</span>
+            </span>
+            <button
+                ref={menuButton}
+                type="button"
+                onClick={() => setOpen(true)}
+                aria-label="Open menu"
+                aria-expanded={open}
+                aria-controls="mobile-sidebar"
+                className="-mr-2 grid h-11 w-11 place-items-center rounded-lg text-neutral-800 hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 dark:text-neutral-200 dark:hover:bg-neutral-700"
             >
-                <div className="flex justify-end z-20 w-full">
-                    <IconMenu2
-                        className="text-neutral-800 dark:text-neutral-200"
-                        onClick={() => setOpen(!open)}
-                    />
-                </div>
-                <AnimatePresence>
-                    {open && (
-                        <motion.div
-                            initial={{ x: "-100%", opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: "-100%", opacity: 0 }}
-                            transition={{
-                                duration: 0.3,
-                                ease: "easeInOut",
-                            }}
-                            className={cn(
-                                "fixed h-full w-full inset-0 bg-white dark:bg-neutral-900 p-10 z-[100] flex flex-col justify-between",
-                                className
-                            )}
+                <Menu className="h-6 w-6" aria-hidden="true" />
+            </button>
+            <AnimatePresence>
+                {open && (
+                    <motion.nav
+                        id="mobile-sidebar"
+                        aria-label="Main"
+                        initial={{ x: "-100%", opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: "-100%", opacity: 0 }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                        className={cn(
+                            "fixed inset-0 z-[100] flex h-full w-full flex-col justify-between overflow-y-auto bg-neutral-100 p-4 pt-3 md:hidden dark:bg-neutral-900",
+                            className
+                        )}
+                    >
+                        <button
+                            ref={closeButton}
+                            type="button"
+                            onClick={() => setOpen(false)}
+                            aria-label="Close menu"
+                            className="absolute right-2 top-2 z-50 grid h-11 w-11 place-items-center rounded-lg text-neutral-800 hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 dark:text-neutral-200 dark:hover:bg-neutral-700"
                         >
-                            <div
-                                className="absolute right-10 top-10 z-50 text-neutral-800 dark:text-neutral-200"
-                                onClick={() => setOpen(!open)}
-                            >
-                                <IconX />
-                            </div>
-                            {children}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-        </>
+                            <X className="h-6 w-6" aria-hidden="true" />
+                        </button>
+                        {children}
+                    </motion.nav>
+                )}
+            </AnimatePresence>
+        </div>
     );
 };
 
@@ -165,7 +200,11 @@ export const SidebarLink = ({ link, className, active = false, ...props }) => {
 export const Logo = () => {
     return (
         <a
-            onClick={() => router.get(route("dashboard"))}
+            href={route("dashboard")}
+            onClick={(e) => {
+                e.preventDefault();
+                router.get(route("dashboard"));
+            }}
             className="cursor-pointer relative z-20 flex items-center space-x-2 py-1 text-sm font-normal"
         >
             {/* Fixed-size logo container */}
@@ -197,7 +236,12 @@ export const Logo = () => {
 export const LogoIcon = () => {
     return (
         <a
-            href="#"
+            href={route("dashboard")}
+            onClick={(e) => {
+                e.preventDefault();
+                router.get(route("dashboard"));
+            }}
+            aria-label="PITON Tabulation home"
             className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal"
         >
             <div className="h-8 w-8 flex-shrink-0 flex-grow-0 relative">

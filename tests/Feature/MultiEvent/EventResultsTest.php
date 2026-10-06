@@ -44,7 +44,7 @@ class EventResultsTest extends TestCase
         $this->assertSame([$j1->id => 25.0, $j2->id => 0.0], $female[1]['scores']);
         $this->assertSame([9.0], array_column($result['groups'][1]['rows'], 'total'));
         $this->assertSame(
-            ['id', 'candidate_number', 'first_name', 'last_name', 'course', 'profile_img'],
+            ['id', 'candidate_number', 'first_name', 'last_name', 'name_suffix', 'course', 'profile_img'],
             array_keys($female[0]['candidate'])
         );
         $this->assertSame(['id' => $cat->id, 'name' => 'Sports Wear', 'max_score' => 25.0, 'round' => 1], $result['category']);
