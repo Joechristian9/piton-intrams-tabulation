@@ -29,6 +29,18 @@ class CompressResponseTest extends TestCase
         $this->assertLessThan(strlen($html), strlen($response->getContent()));
     }
 
+    /** Preloads are written once, in the HTML; not repeated in a Link header. */
+    public function test_assets_are_preloaded_once_in_the_html(): void
+    {
+        $this->withVite();   // the real manifest, as in production
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $response = $this->actingAs($admin)->get(route('admin.events.index'));
+
+        $response->assertOk()->assertHeaderMissing('Link');
+        $this->assertMatchesRegularExpression('#<link rel="preload" as="style" href="[^"]+/build/assets/app-[^"]+\.css"#', $response->getContent());
+    }
+
     public function test_no_gzip_without_accept_encoding_or_for_tiny_responses(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

@@ -48,6 +48,10 @@ Top 3 finalists, and print signed result sheets.
   take 4–10 queries; keep it that way (bulk queries, `AdminQueryCountTest`). Autoloader is
   optimized (`composer dump-autoload -o`; rerun after adding classes isn't required, PSR-4
   falls back). Vite `chunkSizeWarningLimit` is 1000 only because lazy html2pdf is ~950 KB.
+  `AddLinkHeadersForPreloadedAssets` is deliberately not registered: `@vite` already writes
+  the preloads into the HTML; the Link header duplicated them. "Preloaded but not used"
+  console warnings seen in VS Code's built-in browser come from its load-deferring
+  intervention; real Chrome shows none (checked headless via the DevTools protocol).
 - Inertia 2 + React 18, Tailwind 3.4 (+ `tailwindcss-animate` for `animate-in` CSS
   animations), Vite 7, `lucide-react` icons, `sonner` toasts, Ziggy `route()` helper
   available globally in JS. **`motion` is only for the landing/login backdrop and Dashboard

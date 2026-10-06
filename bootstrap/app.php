@@ -11,9 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // No AddLinkHeadersForPreloadedAssets: @vite already writes the same preloads into
+        // the HTML, so the Link header (~1.5 KB, uncompressed, every page) only preloaded
+        // everything a second time. It helps only with HTTP 103 Early Hints, which
+        // `php artisan serve` and this Apache setup don't send.
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
-            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
         // Outermost, so it compresses the final page (see the class for why).
