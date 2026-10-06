@@ -201,7 +201,17 @@ Top 3 finalists, and print signed result sheets.
   delete a group with candidates) and `Admin\CategoryController` (`admin.categories.*`; max
   0.01–999.99; a scored category keeps its max/round and can't be deleted; a round with scores
   takes no new categories, added or moved in). Setup tabs `Pages/Admin/Events/Tabs/{Groups,Categories}.jsx` use
-  `Tabs/request.js` (`send(method, url, data, toast, then)` — chain dependent requests).
+  `Tabs/request.js` (`send(method, url, data, toast, then, { onError, onFinish })` — chain
+  dependent requests; it traps validation errors, non-Inertia responses (404/419/500 via the
+  `invalid` event) and network failures (`exception`) into `onError(message, errors)`, default
+  a toast, instead of Inertia's error modal). Every setup delete (groups, categories,
+  candidates) goes through `Tabs/useConfirmDelete.jsx` → `Components/ConfirmDialog.jsx`
+  (stays open with the error if the delete fails) — never `window.confirm` or an instant
+  delete. Edits are checked in the browser first with `Tabs/validate.js` (`checkName`,
+  `checkMaxPoints`, matching the controllers' rules; `tests/js/setupValidate.test.mjs`);
+  errors show inline under the row (`role="alert"`, `aria-invalid`), Enter saves, Escape
+  reverts, a failed save restores the saved values, and add forms keep their input until the
+  server accepts it.
 - Candidates: `Admin\CandidateController` (`admin.candidates.*`; update is PUT via POST +
   `_method` for multipart). Numbers unique per group; optional `name_suffix` (≤ 20, e.g.
   "Jr."). The photo is optional (none = `profile_img` `''`, shown as the placeholder); when

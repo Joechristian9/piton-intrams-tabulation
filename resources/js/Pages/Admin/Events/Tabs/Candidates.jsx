@@ -6,7 +6,7 @@ import Modal from "@/Components/Modal";
 import CandidatePhoto from "@/Components/CandidatePhoto";
 import { resizePhoto } from "@/lib/photoResize";
 import candidateName from "@/lib/candidateName";
-import send from "./request";
+import useConfirmDelete from "./useConfirmDelete";
 
 const field =
     "mt-1 block w-full min-h-11 rounded-lg border-neutral-600 bg-neutral-800 text-white focus:border-yellow-400 focus:ring-yellow-400";
@@ -147,16 +147,20 @@ function CandidateForm({ event, groups, candidate, onClose }) {
 // An event's candidates with their photos, by group.
 export default function Candidates({ event, groups, candidates }) {
     const [editing, setEditing] = useState(null); // null | "new" | candidate
+    const [askDelete, deleteDialog] = useConfirmDelete();
 
     if (groups.length === 0) {
         return <p className="text-gray-300">Add at least one group first (Groups tab).</p>;
     }
 
-    const remove = (c) => {
-        if (window.confirm(`Delete ${candidateName(c)}?${c.profile_img ? " Their photo is deleted too." : ""}`)) {
-            send("delete", route("admin.candidates.destroy", c.id), {}, "Candidate deleted.");
-        }
-    };
+    const remove = (c) =>
+        askDelete({
+            title: `Delete ${candidateName(c)}?`,
+            description: `Candidate #${c.candidate_number} is removed from this event${c.profile_img ? ", along with their photo" : ""}. This can't be undone.`,
+            confirmLabel: "Delete candidate",
+            url: route("admin.candidates.destroy", c.id),
+            success: "Candidate deleted.",
+        });
 
     return (
         <div className="space-y-6 text-white">
@@ -213,6 +217,7 @@ export default function Candidates({ event, groups, candidates }) {
                     />
                 </Modal>
             )}
+            {deleteDialog}
         </div>
     );
 }
