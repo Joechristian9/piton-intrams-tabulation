@@ -49,139 +49,87 @@ Top 3 finalists, and print signed result sheets.
 
 ## Domain model
 
-- Roles: `users.role` is `admin` or `judge`. Admin-only routes use the `admin` middleware
-  (`App\Http\Middleware\EnsureUserIsAdmin`). Judges log in with email.
-- **Scoring criteria** live in `app/Support/Criteria.php` (max score one judge can give):
-  - Round 1 / Top 3 Selection (total 100): production_number 10, casual_wear 25,
-    swim_wear 25, formal_wear 25, closed_door_interview 15.
-  - Finals / Top 3 Finalists, scored from zero (total 100): face_and_figure 50,
-    delivery 40, overall_appeal 10.
-  - The same limits are duplicated in the frontend: `maxScore` on each page in
-    `resources/js/Pages/Categories/**`, `maxScore` props on admin result pages, and
-    `CATEGORY_MAX` in `Admin/Partials/TopFiveSelectionTable.jsx`. **Keep all in sync.**
-  - The server validates every submitted score is numeric, ≥ 0 and ≤ the category max.
-- Display names differ from keys — only the visible labels were renamed; the DB columns,
-  routes, and component file names keep the old keys (renaming them would orphan saved scores):
-  - `casual_wear` is shown as **"Sports Wear"** everywhere.
-  - `closed_door_interview` is shown as **"Casual Interview"** everywhere (sidebar, result
-    page title, Top 3 table header via `CATEGORY_LABELS`, judge headings, toasts and
-    notifications via `App\Support\Criteria::LABELS`). Never show "Closed Door Interview".
-  - Admins can delete a judge (`JudgeController@destroy`, route `admin.judges.destroy`,
-    `Admin/Judges/Index.jsx` DeleteJudgeModal): admin password required, the judge's Round 1
-    and finals scores are deleted in the same transaction, and results re-average over the
-    remaining judges. The page shows each judge's `score_count` in the warning
-    (`JudgeDeletionTest`). Bumps live `judges` + `scores`.
-  - Judges can be renamed by the admin (real judges aren't named `judge_1`…): never look
-    judges up by name — use ids, or emails `judge1@gmail.com`… for the seeded accounts.
-  - Browser tab titles come from the active sidebar item's label (`SidebarMain.jsx`), so
-    renaming a sidebar label renames the tab too.
-- Tables: `top_five_selection_scores` = one row per (candidate, judge) with a column per
-  Round 1 category; `top_five_candidates` = the finalists (named "top five" historically,
-  but the event uses **Top 3 per gender**); `top_five_scores` = finals scores keyed by
-  `top_five_id`.
-- **Results math** (`app/Services/TopFiveSelectionService.php`, `TopFiveService.php`):
-  each judge's raw score is shown per column (keyed by judge **id**, judges ordered by id);
-  a category total is the **average over all judges in the system** (a judge who hasn't
-  submitted counts as 0), so each round totals out of 100. Ties share a rank.
-- Saving scores: the repositories' `saveScores($judgeId, $category, [candidateId => score])`
-  load existing rows in one query and write everything in one transaction (finals also look
-  up all finalists in one query and skip non-finalists); totals are recalculated per row.
-  Keep it batched — no per-candidate queries (`ScoreSavingTest` checks the query counts).
-  The score store controllers save for `$request->user()->id` and return 403 for non-judges;
-  the `judge_id` the pages still send is ignored (`ScoreOwnershipTest`). Never trust it.
-- **Round 1 locks when finalists exist**: `TopFiveSelectionScoreController` rejects Round 1
-  saves (validation error on `scores`) once any `top_five_candidates` row exists
-  (`RoundOneLockTest`). The 5 Round 1 pages read the shared `finalistsSet` prop as
-  `roundClosed`: inputs and Submit disabled, `Partials/RoundClosedNotice.jsx` shown; their
-  `onError` toasts `errors.scores`. Finals scoring is unaffected. There's no admin "unset
-  finalists" action, so the lock is permanent once the Top 3 is set.
-  Result services load candidates/finalists once and split by gender in PHP.
-- Setting finalists (`TopFiveSelectionResultController@setTopFive`) is admin-only (403
-  otherwise) and requires the admin's `password` (`current_password` rule;
-  `SetTopThreeSecurityTest`). In the UI every path — no tie, or after `TieBreakDialog`'s
-  "Continue" — ends in `Admin/Partials/ConfirmFinalistsDialog.jsx` (finalist list, Round 1
-  lock warning, password field; a wrong password keeps it open with the error). It requires
-  exactly 3 male and 3 female, and only removes finalists who dropped out (removing a finalist cascades and
-  deletes their finals scores). Ties at the cutoff are resolved by the admin in
-  `Admin/Partials/TieBreakDialog.jsx`.
+- Roles: `users.role` is `admin` or `judge`. Admin routes use the `admin` middleware
+  (`App\Http\Middleware\EnsureUserIsAdmin`). Every judge belongs to exactly one event
+  (`users.event_id`); admins have none. Judges log in with their username (or email).
+- **Events** (`events`): name, unique `code` (judge-username prefix), status
+  `setup | live | closed` (several can be live), `rounds` 1|2, `finalists_per_group`,
+  `finals_from_zero`, `round1_weight`/`finals_weight` (carry-over %), `finalists_set_at`
+  (Round 1 lock). Groups (`event_groups`, ranked separately, ordered by `position`),
+  categories (`categories`: round, name, `max_score` = most one judge can give, position),
+  candidates (`candidates.event_id/group_id`; numbers unique per group), finalists
+  (`finalists`, ordered by id = the order they were set), scores (`scores`: one row per
+  category × candidate × judge, `decimal(5,2)`).
+- Event #1 is the original PITON pageant (code `piton`): Female/Male; Round 1 Production
+  Number 10, Sports Wear 25, Swim Wear 25, Formal Wear 25, Casual Interview 15; finals Beauty
+  of the Face and Figure 50, Delivery 40, Over-all Appeal / X-factor 10 (from zero). Never
+  show "Closed Door Interview" (its old column key was `closed_door_interview`).
+- **Results math** lives only in `App\Results\Tabulator` (pure functions; fed by
+  `App\Results\EventResults`): category average = Σ judges' scores ÷ the event's number of
+  judges (missing = 0), rounded to 2; round total = Σ unrounded category averages, rounded
+  at the end; carry-over standings = R1 × w1% + Finals × w2% from unrounded totals; ranks
+  1, 2, 2, 4 within each group (stable sort). Round 1 lists a group's candidates by number;
+  finals list its finalists. Judge columns are keyed by judge **id** (ordered by id) —
+  never look judges up by name.
+- Scores are saved only by `Judge\ScoringController` (details below); never trust a
+  submitted `judge_id`. Setting finalists locks Round 1 for that event.
+- Browser tab titles come from the active sidebar item's label, so renaming a category
+  renames the tab too.
 
 ## Frontend map
 
-- Judge scoring: `resources/js/Pages/Categories/*.jsx` (+ `TopFiveFinalist/`), Female tab
-  first. Unsubmitted drafts persist in localStorage via `resources/js/lib/scoreDrafts.js`.
-  `Components/ui/tabs.jsx` renders only the active tab (hidden tabs used to mount a whole
-  candidate grid behind it).
+- Judge scoring: `Pages/Judge/Score.jsx` (one page for every category; tabs per group;
+  `GroupTab` is defined outside the page so live reloads don't remount cards) with
+  `Pages/Judge/Partials/{CandidateGrid,ScoreAlertDialog,ScoreInput,RoundClosedNotice}.jsx`.
+  Drafts persist in localStorage via `lib/scoreDrafts.js` (key `score-draft:cat{id}:{judge}`).
+  `Pages/Judge/Waiting.jsx` shows "not started" / "ended" for a judge's non-live event.
+- `Components/ui/tabs.jsx` keeps only the active tab's **value** in state and renders the
+  content from current props.
 - Candidate photos: always render through `Components/CandidatePhoto.jsx` (`size="card"` or
-  `"thumb"`). Originals `public/candidates/<gender>/<n>.JPEG` (seeder paths use `.JPEG`) are
-  at most 1365×2048 (~220 KB); `<n>.webp` (480px, ~25 KB) and `<n>-thumb.webp` (96px, ~2 KB)
-  sit beside them and are served via `<picture>` with the JPEG as fallback. A missing WebP
-  breaks the image (the browser doesn't fall back), so after adding/replacing photos run
-  **`npm run images`** (`scripts/optimize-images.mjs`, sharp): it re-encodes the originals in
-  place and regenerates both WebPs plus `isu-logo.webp`/`piton-logo.webp`.
-- Judge pages' `ScoreInput.jsx` (both copies) animates the glow only while hovered/focused;
-  idle boxes are static — don't bring back always-running animations on per-card elements.
-  `backgrounds/stars.jsx` star counts were cut (350/140/70) for low-end devices.
-- Fonts are self-hosted via `@fontsource/figtree` (imported in `app.jsx`) and
-  `@fontsource/orbitron` (imported in `Welcome.jsx`) — no external font/CDN links, because
-  the event network may have no internet and a blocking stylesheet stalls every page.
-- Admin results: `resources/js/Pages/Admin/**` — Female table first, then Male.
-- Live updates use `App\Support\EventFeed` — a numbered event list in the cache store
-  `config('cache.feed_store')` (`file` in the app; `CACHE_FEED_STORE=array` in phpunit.xml
-  so tests never push into the real feeds). Never write feeds with `Cache::store('file')`.
-  - **Live page refresh** (`App\Support\LiveVersions`, `resources/js/lib/liveVersions.js`,
-    `LiveUpdatesTest`): version stamps per topic (`finalists`, `judges`, `scores`) in the
-    feed store. Bump them wherever that data changes (`setTopFive` → finalists+scores, score
-    store controllers → scores, `JudgeController` store/update → judges, destroy → judges+scores). Pages get the
-    stamps as the shared `live` prop; both poll responses include `live`; a differing stamp
-    → `reloadPage()`. Judges watch only `finalists` (don't interrupt scoring); admins watch
-    all. New data that other people's open pages show should get a topic + bump.
-  - `Components/ui/tabs.jsx` keeps only the active tab's **value** in state and renders the
-    content from current props (it used to freeze the first render's content). Because the
-    judge pages define `TabContent` inside the page, a reload remounts it, so each page
-    derives `alreadySubmitted` from `existing_score` / `has_existing_score` to keep the
-    inputs and Submit button locked.
-  - Both pollers chain `setTimeout` (next check only after the previous request finishes,
-    10 s request timeout, skipped while the tab is hidden) — never `setInterval`, which piles
-    up overlapping requests when the server is slow.
-  - Judges' submissions → `ScoreSubmissionFeed`; admins' `Components/ScoreSubmissionToasts.jsx`
-    polls every 3 s, toasts, and calls `router.reload()` only when something changed.
-  - Admin → judges notifications → `JudgeCallFeed`. Admin page **Management → Notify Judges**
-    (`Pages/Admin/NotifyJudges.jsx`, `JudgeNotificationController`, routes
-    `admin.notify_judges[.send]`, admin middleware): pick a category (or a general reminder),
-    message (≤ 200 chars) pre-filled with the suggested text and editable — switching
-    category refreshes it only if the admin hasn't edited it, "Reset to suggested message"
-    restores it, and it resets to the suggestion after sending (the server still falls back
-    to the default if it arrives empty); all judges or selected ones; shows each judge's progress
-    per category (`progress()` counts non-null scores; total = all candidates for Round 1,
-    finalists for the finals) and can select judges who haven't finished. Judges'
-    `Components/JudgeNotifications.jsx` polls `judge.notifications` every 3 s (state only
-    updates when the list changed), shows a toast for new calls and an in-flow banner at the
-    top of the page (with "Go to <category>") until dismissed — it must not float over the
-    Female/Male tabs; dismissals are kept in localStorage per judge; calls stay 2 hours.
-- Category display names and each category's judge-page route live in
-  `App\Support\Criteria::LABELS` / `JUDGE_ROUTES` — use these rather than new label maps.
-- PDF: `Admin/Partials/PrintButton.jsx` builds a white landscape A4 report with one
-  signature line per judge; `html2pdf.js` is lazy-loaded on click. Keep the report's bottom
-  padding and the `pagebreak.avoid` rules (rows and the signature block must never split).
-- Layout: `Layouts/PageLayout.jsx` + `Components/SidebarMain.jsx` (active-link indicator,
-  click-to-reveal logout, sets the tab title from the active link). The sidebar's
-  "Top 3 Finalist" section (judges and admins) is hidden until finalists exist — shared
-  Inertia prop `finalistsSet` from `HandleInertiaRequests` (`FinalistsSetPropTest`). Landing page:
-  `Pages/Welcome.jsx` — keep it general and minimal (logo, title, org name, tagline, one
-  login CTA, footer "© year Darryl Tamayo & Andrei Sam Pambid").
+  `"thumb"`); it maps `candidates/<gender>/<n>.JPEG` and `uploads/candidates/<event>/<uuid>.jpg`
+  to their `.webp` / `-thumb.webp` siblings (a missing WebP breaks the image). Original photos:
+  run **`npm run images`** (`scripts/optimize-images.mjs`, sharp) after replacing them.
+  Uploads: the browser makes the three sizes (`lib/photoResize.js`).
+- `ScoreInput.jsx` animates the glow only while hovered/focused — don't bring back
+  always-running per-card animations. `backgrounds/stars.jsx` star counts were cut for
+  low-end devices.
+- Fonts are self-hosted (`@fontsource/figtree` in `app.jsx`, `@fontsource/orbitron` in
+  `Welcome.jsx`) — no external font/CDN links; the event network may have no internet.
+- Admin: `Pages/Admin/Events/{Index,Edit,JudgeSlips}.jsx` (+ `Tabs/{Settings,Groups,Categories,
+  Candidates,Judges}.jsx`), `Pages/Admin/Results/{Category,Round,Standings}.jsx`,
+  `Pages/Admin/NotifyJudges.jsx`; shared `Admin/Partials/{ResultTable,TopFiveSelectionTable,
+  TieBreakDialog,ConfirmFinalistsDialog,PrintButton}.jsx`, `Components/PasswordConfirmDialog.jsx`.
+- Live updates use `App\Support\EventFeed` in the cache store `config('cache.feed_store')`
+  (`file` in the app; `CACHE_FEED_STORE=array` in phpunit.xml). Never write feeds with
+  `Cache::store('file')`. Per-event stamps (`App\Support\LiveVersions`, topics `event`,
+  `finalists`, `scores`; JS `lib/liveVersions.js`) — judges watch event+finalists, admins all
+  three; bump the right topic wherever data other people see changes. Both pollers
+  (`Components/JudgeNotifications.jsx`, `Components/ScoreSubmissionToasts.jsx`) chain
+  `setTimeout` every 3 s (10 s timeout, paused in hidden tabs) — never `setInterval`. The
+  judge banner stays in the page flow (never floating over the group tabs); dismissals are
+  kept per judge in localStorage; calls stay 2 hours.
+- PDF: `Admin/Partials/PrintButton.jsx` builds a white landscape A4 report with one signature
+  line per judge; `html2pdf.js` is lazy-loaded. Keep the bottom padding and `pagebreak.avoid`
+  rules (rows and the signature block must never split). **Confidentiality:** printed score
+  columns read "Judge 1…n" (headers tagged `data-judge-column` in `ResultTable.jsx`), and the
+  signatures show names only, alphabetically (`lib/printReport.js`, tested in
+  `tests/js/printReport.test.mjs`), so a printout can't link a judge to their scores. The
+  on-screen admin table still shows names.
+- Layout: `Layouts/PageLayout.jsx` + `Components/SidebarMain.jsx`, which renders the
+  server-built `nav` prop (`App\Support\Navigation`): judges get their live event's categories
+  (finals section only after finalists are set); admins get an event picker and that event's
+  result pages plus Management (Events, Notify Judges). Landing page `Pages/Welcome.jsx` —
+  keep it general and minimal (logo, title, org name, tagline, one login CTA, footer
+  "© year Darryl Tamayo & Andrei Sam Pambid").
 - Login and other account pages: `Layouts/GuestLayout.jsx` is a dark PITON shell (adds the
-  `dark` class, so `TextInput`/`InputLabel`/`Checkbox`/`InputError`/`PrimaryButton` switch to
-  their `dark:` styles). `Pages/Auth/Login.jsx` has visible labels, show/hide password,
-  inline errors with `aria-describedby`, focus moved to the email field on failure, and a
-  loading state. It says "Ask the organizer to reset it" instead of linking to the broken
-  forgot-password flow.
+  `dark` class). `Pages/Auth/Login.jsx` ("Username or email", show/hide password, inline errors
+  with `aria-describedby`, focus on failure, loading state; "Ask the organizer to reset it"
+  instead of the broken forgot-password flow). There is no public sign-up.
 - Shared backdrop: `Components/PitonBackdrop.jsx` (stars + HUD grid, static for reduced
   motion), used by the landing and login pages.
-- Tab titles: `app.jsx` renders `"<title> - PITON"`, or just `"PITON"` when a page sets
-  none. Dashboard and the auth pages set their own `<Head title>`.
-- Brand assets in `public/`: `PITON LOGO.png` (original, 432 KB), `piton-logo.webp` (384px,
-  21 KB, use this in the UI), `favicon.ico` (16/32/48), `favicon-32x32.png`,
-  `apple-touch-icon.png`; linked from `resources/views/app.blade.php`.
+- Tab titles: `app.jsx` renders `"<title> - PITON"`, or just `"PITON"` when a page sets none.
+- Brand assets in `public/`: `PITON LOGO.png` (original), `piton-logo.webp` (384px, use this),
+  `isu-logo.webp`, `favicon.ico`, `favicon-32x32.png`, `apple-touch-icon.png`.
 
 ## UI work
 
@@ -192,32 +140,130 @@ Top 3 finalists, and print signed result sheets.
   `gray-500/600`), visible focus rings, ≥ 44px tap targets, `prefers-reduced-motion`
   respected, no horizontal scroll at 375px, SVG icons (no emoji).
 
-## Known issues (project analysis, 2026-10-03) — not yet fixed unless noted
+## Multi-event features (reference)
+
+- Spec `docs/superpowers/specs/2026-10-05-multi-event-design.md`, plan
+  `docs/superpowers/plans/2026-10-05-multi-event.md`, progress ledger
+  `.superpowers/sdd/2026-10-05-multi-event/progress.md` (git-ignored).
+- New schema: `events`, `event_groups`, `categories`, `finalists`, `scores` (one row per
+  category × candidate × judge), `candidates.event_id/group_id`, `users.event_id/username`.
+  Candidate numbers are unique **per group** (today's pageant numbers each gender from 1).
+- Formulas live only in `App\Results\Tabulator` (pure); `App\Results\EventResults` loads an
+  event. Round 1 lists a group's candidates by number; finals list finalists in the order
+  they were set.
+- Judge scoring: `Judge\ScoringController` (`score.show` / `score.store`, `/score/{category}`).
+  Judges only, only their own event's categories (404 otherwise); saves for the logged-in
+  judge via one upsert; rejects when the event isn't live ("This event isn't running right
+  now."), when Round 1 is locked, or when a candidate isn't in the round (round 2 = finalists).
+  Bumps the event's `scores` stamp and pushes the per-event submission feed.
+- Admin results: `Admin\ResultsController` under `/admin/events/{event}/results/...`
+  (`admin.results.category|round1|standings`, `admin` middleware — judges get 403). Pages
+  `Admin/Results/{Category,Round,Standings}.jsx`; standings show weighted columns in
+  carry-over mode. `App\Support\AdminEventContext` picks the admin's event (URL → session →
+  latest started live → newest); the sidebar has an event picker (`nav.events`).
+  `Navigation` builds the admin sections; shared `live` uses the admin's event.
+- Setting finalists: `Admin\FinalistController` (`admin.finalists.set`, POST
+  `/admin/events/{event}/finalists`): admin password, 2-round events only, exactly
+  `finalists_per_group` per group, candidates of this event; removed finalists lose their
+  round-2 scores; sets `finalists_set_at` (Round 1 lock) and bumps finalists+scores.
+  `TieBreakDialog` takes `sections=[{label, plan}]` + `count`; `ConfirmFinalistsDialog` takes
+  `groups=[{label, finalists}]` + `count`; `planFinalists(rows, count)`.
+- Notifications per event: `Admin\NotifyController` (`admin.notify` / `admin.notify.send`,
+  `/admin/events/{event}/notify`; category and judges must belong to the event) and
+  `JudgeCallFeed::push($eventId, …)` / `forJudge(User)` (feed key per event; calls carry
+  `category_id`, the banner links via `route('score.show', id)`). Admin toasts poll
+  `admin.events.score_submissions` for the event in `nav.event`.
+- Events: `Admin\EventController` (`admin.events.index|store|edit|update|destroy|start|close|duplicate`).
+  Several events can be live. Start/Close/Delete need the admin password
+  (`Components/PasswordConfirmDialog.jsx` + `Pages/Admin/Events/usePasswordAction.js`). Start
+  needs judges, groups, candidates in every group and categories for every round. Locks
+  (`App\Support\EventLocks`): rounds/finals settings once scored, Top N once finalists set,
+  code once judges exist; going 2 → 1 rounds needs the Round 2 categories deleted and no
+  finalists; delete only without scores. Duplicate copies settings, groups and categories
+  (code `{code}-copy[-n]`, shortened to fit 20 chars). Uploaded photos use the `uploads` disk
+  (`public/uploads`, git-ignored, no storage:link).
+- Groups/categories: `Admin\GroupController` (`admin.groups.*`; names unique per event; can't
+  delete a group with candidates) and `Admin\CategoryController` (`admin.categories.*`; max
+  0.01–999.99; a scored category keeps its max/round and can't be deleted; a round with scores
+  takes no new categories, added or moved in). Setup tabs `Pages/Admin/Events/Tabs/{Groups,Categories}.jsx` use
+  `Tabs/request.js` (`send(method, url, data, toast, then)` — chain dependent requests).
+- Candidates: `Admin\CandidateController` (`admin.candidates.*`; update is PUT via POST +
+  `_method` for multipart). Numbers unique per group; photo = `photo` (JPEG ≤ 5 MB) +
+  `photo_card` (WebP ≤ 1 MB) + `photo_thumb` (WebP ≤ 200 KB), required together, stored as
+  `uploads/candidates/{event}/{uuid}.jpg|.webp|-thumb.webp`; replacing/deleting removes old
+  upload files only after the save succeeds (a failed save removes the new files instead) and
+  never touches `public/candidates/`. Scored candidates can't be deleted or
+  regrouped. `CandidatePhoto.jsx` maps both path styles to their WebPs. Tests use real image
+  fixtures in `tests/fixtures/` (this PHP has no WebP support to fake them).
+- Judges per event: `App\Support\JudgeAccounts` (`create($event, $count)` → "Judge n",
+  `{code}-judge{n}` numbering on from the highest existing, email `{username}@judges.local`,
+  8-char password from `ALPHABET`, encrypted copy in `password_plain_encrypted` for
+  reveal/reprint; `resetPassword`, `revealPassword`). `Admin\EventJudgeController`
+  (`admin.event-judges.store|update|reset|destroy|slips`; delete needs password and no scores).
+  Judges tab + `Pages/Admin/Events/JudgeSlips.jsx` (printable). The old global Judges page,
+  `JudgeController` and their tests are gone. **Judges can't edit or delete their own
+  account**: `/profile` and `password.update` use the `admin` middleware
+  (`JudgeAccountLockTest`); the admin renames judges and resets passwords.
+- Login: field `login` ("Username or email"); `LoginRequest` uses `email` when it contains
+  `@`, otherwise `username`; errors and throttling are keyed on `login`.
+- Old tables (`top_five_*`, `candidates.gender`) are dropped by
+  `database/migrations/pending/2026_10_20_000001_drop_legacy_score_tables.php`, which plain
+  `migrate` never runs. Only with the user's go-ahead, between events: `php artisan db:backup`,
+  then `php artisan migrate --path=database/migrations/pending`. After that,
+  `events:migrate-legacy` can't run (it needs the old tables).
+- Judge tab submit rules live in `resources/js/lib/scoreSheet.js` (`isLocked`, `canSubmit`,
+  `scoresToSubmit`: saved scores count as filled, only unsaved candidates are sent — so a
+  candidate added mid-event can still be scored). Tested with Node's runner:
+  `npm run test:js` (`tests/js/*.test.mjs`). The page clears drafts only when the response is
+  the scoring page; a closed event redirects straight to the dashboard with the error.
+- Performance: admin setup/list pages load counts and "has scores" flags in bulk
+  (`withCount` / `withExists`, `Event::scores()` is a has-many-through) —
+  `AdminQueryCountTest` fails if a page's query count grows with the event. Measured
+  2026-10-05 on a full Event #1: judge poll 0 queries, scoring page 8, admin results 8–10.
+  On the judge page `CandidateGrid` renders memoized `CandidateCard`s and `Score.jsx` keeps
+  `handleScoreChange` stable (`useCallback`), so typing re-renders one card, not the grid.
+- `php artisan serve` uses the project's `server.php` router (Laravel picks it up when it
+  exists): real files get `Cache-Control` (build assets 1 year immutable; photos/fonts 1 hour
+  + ETag/304) and JS/CSS/SVG are gzipped; everything else goes to `public/index.php`. The bare
+  built-in server sent no caching headers at all. `DevServerTest` starts a real `php -S` with
+  it. Restart `php artisan serve` after changing it.
+- **A page must never import another page** (e.g. `Edit.jsx` importing from `Index.jsx`): Vite
+  folds the imported page into the importer and drops it from the build manifest, so the
+  server 500s ("Unable to locate file in Vite manifest"). Put shared code in `lib/`,
+  `Components/`, `Partials/` or `Tabs/`. Guarded by `tests/js/pages.test.mjs`. PHP tests use
+  `withoutVite()` and can't catch this — after building, open the pages for real.
+- Event #1 was migrated on the real database on 2026-10-05 (backups
+  `database/backups/piton-2026-10-05_125401.sqlite` before, `…_125415.sqlite` just before import).
+- Routes are cached too: clear them (`php artisan route:clear`) before tests after route
+  changes, then `php artisan optimize` when done.
+- `php artisan events:migrate-legacy` moves the old pageant into Event #1 (code `piton`):
+  refuses if an event with code `piton` exists, if old score rows came from non-judge accounts,
+  or if the old tables hold duplicate (candidate/finalist, judge) rows. It only touches judges
+  and candidates not yet in any event, so events created first are safe. It runs
+  `db:backup`, imports in a transaction, and commits only if `App\Legacy\Snapshot::diff`
+  against `App\Legacy\LegacyResults` (frozen copy of the old formulas, `DB::table` only —
+  never "improve" it) is empty. Run it between events only. Its test keeps RefreshDatabase
+  but returns [] from `connectionsToTransact()` and runs `migrate:fresh` around each test
+  (VACUUM can't run inside a transaction; `DatabaseMigrations` broke later test files by
+  rolling back the shared in-memory schema).
+
+## Known issues (project analysis, 2026-10-03; updated 2026-10-05) — not yet fixed unless noted
 
 Ask the user before fixing; report them when they touch the area you're working on.
 
-1. **Admin results and Top 3 selection aren't admin-only.** `admin/*` results routes and
-   `POST /top-five` only use `auth` + `verified`; any logged-in judge can open results and
-   set the finalists. Only `admin/judges*` uses the `admin` middleware (and
-   `admin/score-submissions` checks the role inline).
-2. **Score submissions trust `judge_id` from the request.** Both score controllers save under
-   `$request->input('judge_id')` — a logged-in user can submit (or overwrite) scores as
-   another judge. Should use `$request->user()->id` and require the judge role.
-3. **Submitted scores can be overwritten.** The UI locks submitted scores, but the
-   repositories use `firstOrNew` + save, so a direct request replaces them.
-4. **`/profile` lets a judge delete their own account**, which cascades and deletes all
-   their scores (`judge_id` FKs use `onDelete('cascade')`). Not linked in the sidebar, but
-   reachable by URL.
-5. **Registration is public but broken** (`/register` 500s: `users.role` is NOT NULL and
-   isn't set). Admins add judges instead; the route should be removed or disabled.
+1. ~~Admin results and Top 3 selection weren't admin-only~~ — fixed: every admin route uses
+   the `admin` middleware.
+2. ~~Score submissions trusted `judge_id`~~ — fixed: scores are saved for the logged-in judge.
+3. **A judge can resubmit (overwrite) their own scores by a direct request.** The UI locks a
+   submitted tab, but `score.store` upserts. Round 1 is locked server-side once finalists are set.
+4. ~~`/profile` let a judge delete or change their own account~~ — fixed: admins only.
+5. ~~Public registration~~ — removed; judges are created per event.
 6. **Password reset can't work** (`MAIL_MAILER=log`); the login page tells users to ask the
    organizer instead. The `/forgot-password` routes still exist.
 7. **`APP_DEBUG=true`** — detailed error pages expose code and config; turn off for the event.
-8. **Backups are manual.** `php artisan db:backup` exists (first backup taken 2026-10-03);
-   run it before and during the event.
-9. Code health: `console.log` of user details in `SidebarMain.jsx` and `Dashboard.jsx`;
-   the 8 judge pages are near-duplicates (~1,050 lines) each defining `TabContent` inside
-   the component (remounts on every parent render). (Photo size: fixed with WebP.)
+8. **Backups are manual.** `php artisan db:backup` exists; run it before and during the event.
+9. Code health: `console.log` of user details in `Pages/Dashboard.jsx`. (The 8 duplicated judge
+   pages were replaced by `Pages/Judge/Score.jsx`.)
 
 ## Keeping this file current
 

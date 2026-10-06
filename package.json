@@ -5,7 +5,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "images": "node scripts/optimize-images.mjs"
+        "images": "node scripts/optimize-images.mjs",
+        "test:js": "node --test \"tests/js/*.test.mjs\""
     },
     "devDependencies": {
         "@headlessui/react": "^2.0.0",

@@ -17,14 +17,14 @@ export const FINALIST_COUNT = 3;
  * tie at the cutoff, the tied group the admin must pick from.
  * e.g. ranks 1, 2, 3, 3 -> sure: [1, 2], tied: [3, 3], slots: 1
  */
-export const planFinalists = (candidates) => {
+export const planFinalists = (candidates, count = FINALIST_COUNT) => {
     const countAtOrAbove = (rank) =>
         candidates.filter((c) => c.rank <= rank).length;
 
     const sure = candidates.filter(
-        (c) => countAtOrAbove(c.rank) <= FINALIST_COUNT
+        (c) => countAtOrAbove(c.rank) <= count
     );
-    const slots = FINALIST_COUNT - sure.length;
+    const slots = count - sure.length;
 
     const nextRank = Math.min(
         ...candidates.filter((c) => !sure.includes(c)).map((c) => c.rank)
@@ -102,47 +102,44 @@ const GenderSection = ({ label, plan, picks, setPicks }) => {
     );
 };
 
-const TieBreakDialog = ({ plan, onCancel, onConfirm }) => {
-    const [femalePicks, setFemalePicks] = useState([]);
-    const [malePicks, setMalePicks] = useState([]);
+// sections: [{ label, plan }] — one per group, plan from planFinalists().
+const TieBreakDialog = ({ sections, count = FINALIST_COUNT, onCancel, onConfirm }) => {
+    const [picks, setPicks] = useState(() => sections.map(() => []));
+    const setPicksFor = (index) => (update) =>
+        setPicks((all) => all.map((p, i) => (i === index ? update(p) : p)));
 
-    const ready =
-        femalePicks.length === plan.female.slots &&
-        malePicks.length === plan.male.slots;
+    const ready = sections.every((s, i) => picks[i].length === s.plan.slots);
 
     const confirm = () =>
-        onConfirm([
-            ...plan.female.sure.map((c) => c.candidate.id),
-            ...femalePicks,
-            ...plan.male.sure.map((c) => c.candidate.id),
-            ...malePicks,
-        ]);
+        onConfirm(
+            sections.flatMap((s, i) => [
+                ...s.plan.sure.map((c) => c.candidate.id),
+                ...picks[i],
+            ])
+        );
 
     return (
         <AlertDialog open onOpenChange={(open) => !open && onCancel()}>
             <AlertDialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col bg-neutral-900 text-white rounded-lg shadow-lg p-6">
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Resolve Tie for Top {FINALIST_COUNT}</AlertDialogTitle>
+                    <AlertDialogTitle>Resolve Tie for Top {count}</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Candidates already in the Top {FINALIST_COUNT} are
+                        Candidates already in the Top {count} are
                         checked. Apply your tie-breaker, then pick who
                         advances from the tied candidates.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
 
                 <div className="min-h-0 flex-1 overflow-y-auto flex flex-col gap-6 pr-1">
-                    <GenderSection
-                        label="Female"
-                        plan={plan.female}
-                        picks={femalePicks}
-                        setPicks={setFemalePicks}
-                    />
-                    <GenderSection
-                        label="Male"
-                        plan={plan.male}
-                        picks={malePicks}
-                        setPicks={setMalePicks}
-                    />
+                    {sections.map((s, i) => (
+                        <GenderSection
+                            key={s.label}
+                            label={s.label}
+                            plan={s.plan}
+                            picks={picks[i]}
+                            setPicks={setPicksFor(i)}
+                        />
+                    ))}
                 </div>
 
                 <AlertDialogFooter className="gap-2">

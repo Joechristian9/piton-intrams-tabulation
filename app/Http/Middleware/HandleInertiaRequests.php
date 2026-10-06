@@ -2,8 +2,9 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\TopFiveCandidates;
+use App\Support\AdminEventContext;
 use App\Support\LiveVersions;
+use App\Support\Navigation;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -31,15 +32,30 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        // The event an admin is looking at, resolved once per request.
+        $adminEvent = null;
+        $resolveAdminEvent = function () use ($request, &$adminEvent) {
+            if ($adminEvent === null && $request->user()?->role === 'admin') {
+                $adminEvent = AdminEventContext::current($request) ?? false;
+            }
+
+            return $adminEvent ?: null;
+        };
+
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
             ],
-            // The sidebar hides the Top 3 Finalist categories until the admin sets them.
-            'finalistsSet' => fn () => $request->user() !== null && TopFiveCandidates::exists(),
+            // Sidebar items built from the user's event (App\Support\Navigation).
+            'nav' => fn () => Navigation::for($request->user(), $resolveAdminEvent()),
             // Version stamps this page was built with; the pollers reload when they change.
-            'live' => fn () => $request->user() ? LiveVersions::all() : null,
+            // Judges: their event. Admins: the event they're looking at.
+            'live' => function () use ($request, $resolveAdminEvent) {
+                $eventId = $request->user()?->event_id ?? $resolveAdminEvent()?->id;
+
+                return $eventId ? LiveVersions::all($eventId) : null;
+            },
         ];
     }
 }

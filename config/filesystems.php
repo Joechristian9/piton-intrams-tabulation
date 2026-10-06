@@ -47,6 +47,16 @@ return [
             'report' => false,
         ],
 
+        // Candidate photos uploaded per event, served directly from public/uploads
+        // (no storage:link, which can need administrator rights on Windows).
+        'uploads' => [
+            'driver' => 'local',
+            'root' => public_path('uploads'),
+            'visibility' => 'public',
+            'throw' => true,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

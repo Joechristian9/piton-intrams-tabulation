@@ -22,3 +22,5 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+# Candidate photos uploaded per event (live data, not code)
+/public/uploads

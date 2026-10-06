@@ -8,11 +8,11 @@ test('login screen can be rendered', function () {
     $response->assertStatus(200);
 });
 
-test('users can authenticate using the login screen', function () {
+test('users can authenticate with their email', function () {
     $user = User::factory()->create();
 
     $response = $this->post('/login', [
-        'email' => $user->email,
+        'login' => $user->email,
         'password' => 'password',
     ]);
 
@@ -20,14 +20,38 @@ test('users can authenticate using the login screen', function () {
     $response->assertRedirect(route('dashboard', absolute: false));
 });
 
-test('users can not authenticate with invalid password', function () {
-    $user = User::factory()->create();
+test('judges can authenticate with their username', function () {
+    $user = User::factory()->create(['role' => 'judge', 'username' => 'pageant26-judge1']);
 
     $this->post('/login', [
-        'email' => $user->email,
-        'password' => 'wrong-password',
+        'login' => 'pageant26-judge1',
+        'password' => 'password',
     ]);
 
+    $this->assertAuthenticatedAs($user);
+});
+
+test('users can not authenticate with invalid password', function () {
+    $user = User::factory()->create(['username' => 'someone']);
+
+    $this->post('/login', ['login' => $user->email, 'password' => 'wrong-password'])
+        ->assertSessionHasErrors('login');
+    $this->post('/login', ['login' => 'someone', 'password' => 'wrong-password'])
+        ->assertSessionHasErrors('login');
+
+    $this->assertGuest();
+});
+
+test('too many failed attempts are throttled', function () {
+    User::factory()->create(['username' => 'someone']);
+
+    foreach (range(1, 5) as $_) {
+        $this->post('/login', ['login' => 'someone', 'password' => 'wrong-password']);
+    }
+
+    $this->post('/login', ['login' => 'someone', 'password' => 'password'])
+        ->assertSessionHasErrors('login');
+    expect(session('errors')->first('login'))->toStartWith('Too many login attempts.');
     $this->assertGuest();
 });
 

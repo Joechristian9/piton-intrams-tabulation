@@ -48,10 +48,12 @@ function ProgressBadge({ scored, total }) {
     );
 }
 
-const NotifyJudges = ({ judges = [], categories = [], progress = {}, recent = [] }) => {
+const NotifyJudges = ({ judges = [], categories = [], progress = {}, recent = [], sendUrl, event }) => {
+    // Round headings in category order (e.g. "Top 3 Selection", "Top 3 Finalist").
+    const rounds = [...new Set(categories.map((c) => c.round))];
     // Suggested message for a category ("" = general reminder).
     const defaultFor = (key) => {
-        const match = categories.find((c) => c.key === key);
+        const match = categories.find((c) => String(c.key) === String(key));
         return match
             ? `Please score the candidates for ${match.label}.`
             : "Please check your scoring sheets.";
@@ -76,7 +78,7 @@ const NotifyJudges = ({ judges = [], categories = [], progress = {}, recent = []
                     : d.message,
         }));
 
-    const category = categories.find((c) => c.key === data.category);
+    const category = categories.find((c) => String(c.key) === String(data.category));
     const categoryProgress = progress[data.category];
     const scoredBy = (judgeId) => categoryProgress?.scored?.[judgeId] ?? 0;
 
@@ -112,7 +114,7 @@ const NotifyJudges = ({ judges = [], categories = [], progress = {}, recent = []
             judge_ids: d.audience === "all" ? null : d.judge_ids,
         }));
 
-        post(route("admin.notify_judges.send"), {
+        post(sendUrl, {
             preserveScroll: true,
             onSuccess: () => {
                 toast.success(
@@ -163,7 +165,7 @@ const NotifyJudges = ({ judges = [], categories = [], progress = {}, recent = []
                                 aria-describedby={errors.category ? "category-error" : undefined}
                             >
                                 <option value="">General reminder (no category)</option>
-                                {["Top 3 Selection", "Top 3 Finalist"].map((round) => (
+                                {rounds.map((round) => (
                                     <optgroup key={round} label={round}>
                                         {categories
                                             .filter((c) => c.round === round)

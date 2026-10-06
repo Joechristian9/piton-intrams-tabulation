@@ -3,16 +3,19 @@
 // (480px wide, ~25 KB) for cards and <n>-thumb.webp (96px square, ~2 KB) for avatars.
 // `npm run images` regenerates them after photos are added or replaced. Browsers
 // that support WebP get those; anything else, or any other path, uses the original.
-const LOCAL_PHOTO = /^candidates\/(male|female)\/(\d+)\.jpe?g$/i;
+// Photos uploaded per event (uploads/candidates/<event>/<uuid>.jpg) get the same two
+// WebP sizes from the admin's browser when they're added.
+const LOCAL_PHOTO = /^(candidates\/(?:male|female))\/(\d+)\.jpe?g$/i;
+const UPLOADED_PHOTO = /^(uploads\/candidates\/\d+)\/([0-9a-f-]+)\.jpg$/i;
 
 export default function CandidatePhoto({ path, size = "card", alt, className, ...props }) {
     // Stored paths look like "candidates/female/1.jpg" (sometimes "admin/..." or "/...").
     const clean = (path || "").replace(/^\/+/, "").replace(/^admin\//, "");
     const src = clean ? `/${clean}` : "/default-avatar.png";
 
-    const match = clean.match(LOCAL_PHOTO);
+    const match = clean.match(LOCAL_PHOTO) ?? clean.match(UPLOADED_PHOTO);
     const webp = match
-        ? `/candidates/${match[1]}/${match[2]}${size === "thumb" ? "-thumb" : ""}.webp`
+        ? `/${match[1]}/${match[2]}${size === "thumb" ? "-thumb" : ""}.webp`
         : null;
 
     const img = (

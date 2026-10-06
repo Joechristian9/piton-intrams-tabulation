@@ -20,9 +20,11 @@ class PasswordController extends Controller
             'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
 
-        $request->user()->update([
+        // A judge who picks their own password no longer has a copy the admin can reveal.
+        $request->user()->forceFill([
             'password' => Hash::make($validated['password']),
-        ]);
+            'password_plain_encrypted' => null,
+        ])->save();
 
         return back();
     }

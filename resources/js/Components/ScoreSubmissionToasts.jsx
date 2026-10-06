@@ -6,9 +6,9 @@ import axios from "axios";
 import { toast } from "sonner";
 import { ADMIN_TOPICS, isStale, reloadPage } from "@/lib/liveVersions";
 
-// Last submission already shown. Kept at module level so moving between
-// admin pages doesn't miss or repeat a toast.
-let lastSeq = null;
+// Last submission already shown, per feed. Kept at module level so moving
+// between admin pages doesn't miss or repeat a toast.
+const lastSeqByFeed = {};
 
 const POLL_MS = 3000;
 
@@ -18,13 +18,15 @@ const POLL_MS = 3000;
 export default function ScoreSubmissionToasts() {
     const { props } = usePage();
     const isAdmin = props.auth?.user?.role === "admin";
+    // The event the admin is looking at (none: nothing to poll).
+    const eventId = props.nav?.event?.id ?? null;
 
     // Version stamps the current page was built with.
     const liveRef = useRef(props.live);
     liveRef.current = props.live;
 
     useEffect(() => {
-        if (!isAdmin) return;
+        if (!isAdmin || !eventId) return;
 
         let timer = null;
         let inFlight = false;
@@ -43,10 +45,11 @@ export default function ScoreSubmissionToasts() {
             inFlight = true;
 
             try {
-                const { data } = await axios.get(
-                    route("admin.score_submissions"),
-                    { params: { after: lastSeq ?? undefined }, timeout: 10000 }
-                );
+                const feedUrl = route("admin.events.score_submissions", eventId);
+                const { data } = await axios.get(feedUrl, {
+                    params: { after: lastSeqByFeed[feedUrl] ?? undefined },
+                    timeout: 10000,
+                });
 
                 data.events.forEach((e) => toast.success(e.message));
 
@@ -56,7 +59,7 @@ export default function ScoreSubmissionToasts() {
                 ) {
                     reloadPage();
                 }
-                lastSeq = data.seq;
+                lastSeqByFeed[feedUrl] = data.seq;
             } catch {
                 // Network hiccup; try again on the next tick.
             } finally {
@@ -75,7 +78,7 @@ export default function ScoreSubmissionToasts() {
             clearTimeout(timer);
             document.removeEventListener("visibilitychange", check);
         };
-    }, [isAdmin]);
+    }, [isAdmin, eventId]);
 
     return null;
 }
