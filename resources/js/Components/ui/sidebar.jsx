@@ -102,13 +102,22 @@ export const MobileSidebar = ({ className, children, ...props }) => {
             className="flex h-14 w-full shrink-0 items-center justify-between border-b border-neutral-200 bg-neutral-100 px-4 md:hidden dark:border-neutral-700 dark:bg-neutral-800"
             {...props}
         >
-            <span className="flex min-w-0 items-center gap-2">
+            {/* The header opens the home page (as the logo does on desktop). */}
+            <a
+                href={route("home")}
+                onClick={(e) => {
+                    e.preventDefault();
+                    setOpen(false);
+                    router.get(route("home"));
+                }}
+                className="-ml-1 flex min-h-11 min-w-0 items-center gap-2 rounded-lg px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+            >
                 <picture className="contents">
                     <source srcSet="/piton-logo-64.webp" type="image/webp" />
                     <img src="/PITON%20LOGO.png" alt="" width={28} height={28} className="h-7 w-7 shrink-0 object-contain" />
                 </picture>
                 <span className="truncate font-medium text-black dark:text-white">PITON Tabulation</span>
-            </span>
+            </a>
             <button
                 ref={menuButton}
                 type="button"
@@ -186,12 +195,12 @@ export const SidebarLink = ({ link, className, active = false, ...props }) => {
 export const Logo = () => {
     return (
         <a
-            href={route("dashboard")}
+            href={route("home")}
             onClick={(e) => {
                 e.preventDefault();
-                router.get(route("dashboard"));
+                router.get(route("home"));
             }}
-            className="cursor-pointer relative z-20 flex items-center space-x-2 py-1 text-sm font-normal"
+            className="cursor-pointer relative z-20 flex items-center space-x-2 py-1 text-sm font-normal rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
         >
             {/* Fixed-size logo container */}
             <div className="h-8 w-8 flex-shrink-0 flex-grow-0 relative">
@@ -218,13 +227,13 @@ export const Logo = () => {
 export const LogoIcon = () => {
     return (
         <a
-            href={route("dashboard")}
+            href={route("home")}
             onClick={(e) => {
                 e.preventDefault();
-                router.get(route("dashboard"));
+                router.get(route("home"));
             }}
             aria-label="PITON Tabulation home"
-            className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal"
+            className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
         >
             <div className="h-8 w-8 flex-shrink-0 flex-grow-0 relative">
                 <picture>

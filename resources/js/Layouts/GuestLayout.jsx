@@ -1,6 +1,7 @@
 import { Link } from "@inertiajs/react";
 import { ArrowLeft } from "lucide-react";
 import PitonBackdrop from "@/Components/PitonBackdrop";
+import DeveloperCredit from "@/Components/DeveloperCredit";
 
 const focusRing =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black";
@@ -43,9 +44,7 @@ export default function GuestLayout({ children }) {
                 </Link>
             </main>
 
-            <footer className="relative z-10 pb-6 text-center text-sm text-gray-400">
-                &copy; {new Date().getFullYear()} joe-dev
-            </footer>
+            <DeveloperCredit />
         </div>
     );
 }

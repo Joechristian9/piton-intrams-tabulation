@@ -87,9 +87,10 @@ function DefaultSkeleton() {
 
 const VARIANTS = { cards: CardsSkeleton, table: TableSkeleton, default: DefaultSkeleton };
 
-/** Which skeleton fits a URL: scoring pages show cards, results pages a table. */
+/** Which skeleton fits a URL: scoring pages show cards, results pages a table; none for the home hero. */
 export function skeletonFor(url) {
     const path = typeof url === "string" ? url : url?.pathname ?? "";
+    if (path === "/home") return null;
     if (path.startsWith("/score/")) return "cards";
     if (path.includes("/results/")) return "table";
     return "default";

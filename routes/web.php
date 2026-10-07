@@ -24,6 +24,9 @@ Route::get('/', function () {
 // Judges land in their event; admins get the dashboard.
 Route::get('/dashboard', HomeController::class)->middleware(['auth', 'verified'])->name('dashboard');
 
+// The signed-in home: the PITON hero, opened by clicking the sidebar's logo header.
+Route::get('/home', fn () => Inertia::render('Home'))->middleware(['auth', 'verified'])->name('home');
+
 // Judges: one scoring page per category of their own event, plus notifications.
 Route::middleware('auth')->group(function () {
     Route::get('/score/{category}', [ScoringController::class, 'show'])->name('score.show');

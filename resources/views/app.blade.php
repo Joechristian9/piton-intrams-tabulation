@@ -30,8 +30,10 @@
         @php
             $component = $page['component'] ?? '';
             $signedIn = ! preg_match('#^(Auth/|Welcome$|Profile/)#', $component);
-            $variant = str_starts_with($component, 'Judge/Score') ? 'cards'
-                : (str_starts_with($component, 'Admin/Results/') ? 'table' : 'default');
+            // The signed-in home is the PITON hero: just the shell, no content blocks.
+            $variant = $component === 'Home' ? 'none'
+                : (str_starts_with($component, 'Judge/Score') ? 'cards'
+                : (str_starts_with($component, 'Admin/Results/') ? 'table' : 'default'));
         @endphp
         <div class="boot-skeleton fixed inset-0 z-50 flex flex-col bg-neutral-900 md:flex-row" aria-hidden="true">
             @if ($signedIn)
@@ -68,7 +70,7 @@
                                 </div>
                             @endfor
                         </div>
-                    @else
+                    @elseif ($variant === 'default')
                         <div class="skeleton h-8 w-48 rounded-md"></div>
                         <div class="mt-6 grid gap-4 lg:grid-cols-2">
                             @for ($i = 0; $i < 4; $i++)
