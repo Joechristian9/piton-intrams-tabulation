@@ -72,7 +72,7 @@ function WeightedTable({ group, weights, judges, title }) {
 
 export default function Standings({ event, mode, weights, categories = [], judges = [], groups }) {
     return (
-        <PageLayout>
+        <>
             <h2 className="mt-6 mb-1 flex justify-center text-xl font-bold text-white">Final Standings</h2>
             <p className="mb-4 text-center text-sm text-gray-400">{event.name}</p>
 
@@ -93,6 +93,10 @@ export default function Standings({ event, mode, weights, categories = [], judge
                     />
                 );
             })}
-        </PageLayout>
+        </>
     );
 }
+
+// Persistent layout: the sidebar and live-update pollers stay mounted between pages
+// (no remount, no extra poll request per click).
+Standings.layout = (page) => <PageLayout>{page}</PageLayout>;

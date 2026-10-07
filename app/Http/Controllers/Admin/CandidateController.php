@@ -14,9 +14,10 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
- * An event's candidates. The browser resizes each photo into the three sizes
- * CandidatePhoto.jsx uses (JPEG original, 480px card WebP, 96px thumb WebP);
- * they're stored under public/uploads/candidates/{event}/ on the `uploads` disk.
+ * An event's candidates. The browser resizes each photo into the sizes
+ * CandidatePhoto.jsx uses (JPEG original; card WebP 360px + 240px; thumb WebP 96px +
+ * 48px — the small ones for desktop 1x screens); they're stored under
+ * public/uploads/candidates/{event}/ on the `uploads` disk.
  * Files under public/candidates/ (the original pageant) are never deleted.
  */
 class CandidateController extends Controller
@@ -95,10 +96,12 @@ class CandidateController extends Controller
             'last_name' => ['required', 'string', 'max:80'],
             'name_suffix' => ['nullable', 'string', 'max:20'],
             'course' => ['nullable', 'string', 'max:160'],
-            // The photo is optional; when given, all three sizes come together.
+            // The photo is optional; when given, all five sizes come together.
             'photo' => ['nullable', 'file', 'mimes:jpg,jpeg', 'max:5120'],
             'photo_card' => ['nullable', 'required_with:photo', 'file', 'mimes:webp', 'max:1024'],
+            'photo_card_small' => ['nullable', 'required_with:photo', 'file', 'mimes:webp', 'max:512'],
             'photo_thumb' => ['nullable', 'required_with:photo', 'file', 'mimes:webp', 'max:200'],
+            'photo_thumb_small' => ['nullable', 'required_with:photo', 'file', 'mimes:webp', 'max:100'],
         ], [
             'photo.mimes' => "This photo format isn't supported. Use a JPG or PNG.",
             'photo.max' => 'The photo is too large (5 MB at most).',
@@ -107,21 +110,30 @@ class CandidateController extends Controller
         return collect($data)->only(['group_id', 'candidate_number', 'first_name', 'last_name', 'name_suffix', 'course'])->all();
     }
 
-    /** Stores the three sizes; returns the path saved in `profile_img`. */
+    /** File name suffix of each stored size, next to "<uuid>". */
+    private const SIZES = [
+        'photo' => '.jpg',
+        'photo_card' => '.webp',
+        'photo_card_small' => '-sm.webp',
+        'photo_thumb' => '-thumb.webp',
+        'photo_thumb_small' => '-thumb-sm.webp',
+    ];
+
+    /** Stores every size; returns the path saved in `profile_img`. */
     private function storePhotos(Request $request, Event $event): string
     {
         $disk = Storage::disk('uploads');
         $dir = "candidates/{$event->id}";
         $stem = (string) Str::uuid();
 
-        $disk->putFileAs($dir, $request->file('photo'), "{$stem}.jpg");
-        $disk->putFileAs($dir, $request->file('photo_card'), "{$stem}.webp");
-        $disk->putFileAs($dir, $request->file('photo_thumb'), "{$stem}-thumb.webp");
+        foreach (self::SIZES as $field => $suffix) {
+            $disk->putFileAs($dir, $request->file($field), $stem . $suffix);
+        }
 
         return "uploads/{$dir}/{$stem}.jpg";
     }
 
-    /** Deletes an uploaded photo's three files; ignores the original pageant's photos. */
+    /** Deletes an uploaded photo's files; ignores the original pageant's photos. */
     private function deletePhotos(?string $profileImg): void
     {
         if (! $profileImg || ! str_starts_with($profileImg, 'uploads/candidates/')) {
@@ -129,6 +141,6 @@ class CandidateController extends Controller
         }
 
         $stem = substr($profileImg, strlen('uploads/'), -strlen('.jpg'));
-        Storage::disk('uploads')->delete(["{$stem}.jpg", "{$stem}.webp", "{$stem}-thumb.webp"]);
+        Storage::disk('uploads')->delete(array_map(fn ($suffix) => $stem . $suffix, array_values(self::SIZES)));
     }
 }

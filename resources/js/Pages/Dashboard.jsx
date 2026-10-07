@@ -18,7 +18,7 @@ export default function Dashboard({ auth }) {
         }
     }, [user]);
     return (
-        <PageLayout user={auth?.user}>
+        <>
             <Head title="Dashboard" />
             <div className="relative flex-1 w-full h-full rounded-xl overflow-hidden">
                 {/* 🌌 Starry background */}
@@ -54,6 +54,10 @@ export default function Dashboard({ auth }) {
                     </p>
                 </div>
             </div>
-        </PageLayout>
+        </>
     );
 }
+
+// Persistent layout: the sidebar and live-update pollers stay mounted between pages
+// (no remount, no extra poll request per click).
+Dashboard.layout = (page) => <PageLayout>{page}</PageLayout>;

@@ -41,8 +41,16 @@ class CandidatesTest extends TestCase
         return [
             'photo' => $this->fixture('photo.jpg', 'image/jpeg'),
             'photo_card' => $this->fixture('card.webp', 'image/webp'),
+            'photo_card_small' => $this->fixture('card.webp', 'image/webp'),
             'photo_thumb' => $this->fixture('thumb.webp', 'image/webp'),
+            'photo_thumb_small' => $this->fixture('thumb.webp', 'image/webp'),
         ];
+    }
+
+    /** Every stored size of an uploaded photo (CandidatePhoto.jsx needs all of them). */
+    private function files(string $stem): array
+    {
+        return ["{$stem}.jpg", "{$stem}.webp", "{$stem}-sm.webp", "{$stem}-thumb.webp", "{$stem}-thumb-sm.webp"];
     }
 
     private function fields(array $overrides = []): array
@@ -72,7 +80,7 @@ class CandidatesTest extends TestCase
         ]);
         $this->assertMatchesRegularExpression("#^uploads/candidates/{$this->event->id}/[0-9a-f-]{36}\\.jpg$#", $candidate->profile_img);
         $stem = substr($candidate->profile_img, strlen('uploads/'), -4);
-        Storage::disk('uploads')->assertExists(["{$stem}.jpg", "{$stem}.webp", "{$stem}-thumb.webp"]);
+        Storage::disk('uploads')->assertExists($this->files($stem));
         $this->assertNotSame($before, LiveVersions::all($this->event->id)['event']);
     }
 
@@ -104,7 +112,7 @@ class CandidatesTest extends TestCase
         $this->create([], [...$this->photos(), 'photo' => UploadedFile::fake()->create('huge.jpg', 6000, 'image/jpeg')])
             ->assertSessionHasErrors('photo');
         $this->create([], ['photo' => $this->fixture('photo.jpg', 'image/jpeg')])
-            ->assertSessionHasErrors(['photo_card', 'photo_thumb']);
+            ->assertSessionHasErrors(['photo_card', 'photo_card_small', 'photo_thumb', 'photo_thumb_small']);
 
         $this->assertSame(0, Candidate::count());
         $this->assertSame([], Storage::disk('uploads')->allFiles());
@@ -140,7 +148,7 @@ class CandidatesTest extends TestCase
 
         $this->actingAs($this->admin)->post(route('admin.candidates.update', $candidate), ['_method' => 'PUT', ...$this->fields(), ...$this->photos()])
             ->assertSessionHasNoErrors();
-        Storage::disk('uploads')->assertMissing(["{$old}.jpg", "{$old}.webp", "{$old}-thumb.webp"]);
+        Storage::disk('uploads')->assertMissing($this->files($old));
         $this->assertNotSame("uploads/{$old}.jpg", $candidate->fresh()->profile_img);
     }
 
@@ -154,8 +162,8 @@ class CandidatesTest extends TestCase
         $this->actingAs($this->admin)->post(route('admin.candidates.update', $candidate), ['_method' => 'PUT', ...$this->fields(), ...$this->photos()])
             ->assertStatus(500);
 
-        Storage::disk('uploads')->assertExists(["{$old}.jpg", "{$old}.webp", "{$old}-thumb.webp"]);
-        $this->assertCount(3, Storage::disk('uploads')->allFiles());
+        Storage::disk('uploads')->assertExists($this->files($old));
+        $this->assertCount(5, Storage::disk('uploads')->allFiles());
     }
 
     public function test_a_failed_create_leaves_no_files(): void

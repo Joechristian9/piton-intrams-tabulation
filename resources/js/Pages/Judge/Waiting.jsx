@@ -10,7 +10,7 @@ export default function Waiting({ state, eventName }) {
     const Icon = ended ? Flag : Clock;
 
     return (
-        <PageLayout>
+        <>
             <Head title={eventName} />
             <div className="flex min-h-[70vh] items-center justify-center px-4">
                 <div
@@ -33,6 +33,10 @@ export default function Waiting({ state, eventName }) {
                     </p>
                 </div>
             </div>
-        </PageLayout>
+        </>
     );
 }
+
+// Persistent layout: the sidebar and live-update pollers stay mounted between pages
+// (no remount, no extra poll request per click).
+Waiting.layout = (page) => <PageLayout>{page}</PageLayout>;

@@ -47,7 +47,7 @@ export default function Edit(props) {
     const live = event.status === "live";
 
     return (
-        <PageLayout>
+        <>
             <div className="p-4 text-white md:p-8">
                 <Link href={route("admin.events.index")} className="inline-flex min-h-11 items-center gap-1 text-sm text-gray-300 hover:text-white">
                     <ArrowLeft className="h-4 w-4" aria-hidden="true" /> All events
@@ -117,6 +117,10 @@ export default function Edit(props) {
             </div>
 
             {dialogProps && <PasswordConfirmDialog {...dialogProps} />}
-        </PageLayout>
+        </>
     );
 }
+
+// Persistent layout: the sidebar and live-update pollers stay mounted between pages
+// (no remount, no extra poll request per click).
+Edit.layout = (page) => <PageLayout>{page}</PageLayout>;

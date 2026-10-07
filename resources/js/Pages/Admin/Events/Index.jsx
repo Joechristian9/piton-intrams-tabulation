@@ -20,7 +20,7 @@ export default function Index({ events = [], themes = null }) {
         e.rounds === 2 ? route("admin.results.round1", e.id) : route("admin.results.standings", e.id);
 
     return (
-        <PageLayout>
+        <>
             <div className="p-4 text-white md:p-8">
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-xl font-bold">Events</h2>
@@ -135,6 +135,10 @@ export default function Index({ events = [], themes = null }) {
             </Modal>
 
             {dialogProps && <PasswordConfirmDialog {...dialogProps} />}
-        </PageLayout>
+        </>
     );
 }
+
+// Persistent layout: the sidebar and live-update pollers stay mounted between pages
+// (no remount, no extra poll request per click).
+Index.layout = (page) => <PageLayout>{page}</PageLayout>;

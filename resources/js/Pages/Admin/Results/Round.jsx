@@ -77,7 +77,7 @@ export default function Round({ event, categories, judges, groups }) {
         }));
 
     return (
-        <PageLayout>
+        <>
             <h2 className="mt-6 mb-1 flex justify-center text-xl font-bold text-white">
                 Top {n} Selection Results
             </h2>
@@ -127,6 +127,10 @@ export default function Round({ event, categories, judges, groups }) {
                     onConfirm={save}
                 />
             )}
-        </PageLayout>
+        </>
     );
 }
+
+// Persistent layout: the sidebar and live-update pollers stay mounted between pages
+// (no remount, no extra poll request per click).
+Round.layout = (page) => <PageLayout>{page}</PageLayout>;

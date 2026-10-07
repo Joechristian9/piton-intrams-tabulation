@@ -23,5 +23,64 @@
     </head>
     <body class="font-sans antialiased">
         @inertia
+        {{-- Shown while the app's script loads on a full page load, shaped like the page
+             being opened; app.css hides it once React renders into #app (pure CSS, so it
+             costs nothing after that). Must stay right after #app. Sign-in pages (login,
+             landing, account) get a plain dark screen instead. --}}
+        @php
+            $component = $page['component'] ?? '';
+            $signedIn = ! preg_match('#^(Auth/|Welcome$|Profile/)#', $component);
+            $variant = str_starts_with($component, 'Judge/Score') ? 'cards'
+                : (str_starts_with($component, 'Admin/Results/') ? 'table' : 'default');
+        @endphp
+        <div class="boot-skeleton fixed inset-0 z-50 flex flex-col bg-neutral-900 md:flex-row" aria-hidden="true">
+            @if ($signedIn)
+                <div class="hidden w-[60px] shrink-0 flex-col gap-4 bg-neutral-800 p-4 md:flex">
+                    <div class="skeleton h-8 w-8 rounded-full"></div>
+                    @for ($i = 0; $i < 6; $i++)
+                        <div class="skeleton mt-2 h-5 w-5 rounded"></div>
+                    @endfor
+                </div>
+                <div class="flex h-14 shrink-0 items-center justify-between border-b border-neutral-700 bg-neutral-800 px-4 md:hidden">
+                    <div class="skeleton h-7 w-40 rounded-md"></div>
+                    <div class="skeleton h-8 w-8 rounded-md"></div>
+                </div>
+                <div class="min-w-0 flex-1 overflow-hidden p-4 md:p-8">
+                    @if ($variant === 'cards')
+                        <div class="skeleton mx-auto h-8 w-56 rounded-md"></div>
+                        <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                            @for ($i = 0; $i < 5; $i++)
+                                <div class="{{ $i > 1 ? 'hidden sm:flex' : 'flex' }} flex-col items-center gap-3 rounded-xl border border-neutral-800 p-4">
+                                    <div class="skeleton h-72 w-full rounded-md"></div>
+                                    <div class="skeleton h-5 w-3/4 rounded-md"></div>
+                                    <div class="skeleton h-10 w-28 rounded-full"></div>
+                                </div>
+                            @endfor
+                        </div>
+                    @elseif ($variant === 'table')
+                        <div class="skeleton h-8 w-64 rounded-md"></div>
+                        <div class="mt-6 space-y-3 rounded-xl border border-neutral-800 p-3">
+                            @for ($i = 0; $i < 8; $i++)
+                                <div class="flex items-center gap-4">
+                                    <div class="skeleton h-8 w-8 rounded-full"></div>
+                                    <div class="skeleton h-4 w-40 rounded-md"></div>
+                                    <div class="skeleton ml-auto h-4 w-14 rounded-md"></div>
+                                </div>
+                            @endfor
+                        </div>
+                    @else
+                        <div class="skeleton h-8 w-48 rounded-md"></div>
+                        <div class="mt-6 grid gap-4 lg:grid-cols-2">
+                            @for ($i = 0; $i < 4; $i++)
+                                <div class="space-y-3 rounded-xl border border-neutral-800 p-5">
+                                    <div class="skeleton h-6 w-2/3 rounded-md"></div>
+                                    <div class="skeleton h-4 w-1/2 rounded-md"></div>
+                                </div>
+                            @endfor
+                        </div>
+                    @endif
+                </div>
+            @endif
+        </div>
     </body>
 </html>

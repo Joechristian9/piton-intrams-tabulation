@@ -6,9 +6,9 @@
  * other URL goes to public/index.php — plus what the bare built-in server lacks:
  *
  *  - caching headers, so judges' phones don't re-download the app and photos on
- *    every full page load (build files never change name-for-content, so they
- *    are cached for a year; photos and fonts for an hour, then revalidated with
- *    a cheap 304 "not modified");
+ *    every full page load (build files and uploaded photos never change in place,
+ *    so they are cached for a year; other photos, logos and fonts for a day, then
+ *    revalidated with a cheap 304 "not modified");
  *  - gzip for JS/CSS/SVG.
  *
  * Under Apache, public/.htaccess does the same job and this file isn't used.
@@ -42,9 +42,13 @@ if ($uri !== '/' && is_file($file)) {
     $etag = sprintf('"%x-%x"', $mtime, $size);
 
     header('Content-Type: ' . $types[$extension]);
-    header('Cache-Control: ' . (str_starts_with($uri, '/build/assets/')
+    // Build files and uploaded photos are never changed in place (a content hash or a
+    // fresh random name each time), so phones keep them for a year and never ask
+    // again. Other files (the original pageant's photos, logos, fonts) keep their
+    // names when replaced: a day, then a cheap 304 check.
+    header('Cache-Control: ' . (str_starts_with($uri, '/build/assets/') || str_starts_with($uri, '/uploads/candidates/')
         ? 'public, max-age=31536000, immutable'
-        : 'public, max-age=3600'));
+        : 'public, max-age=86400'));
     header('ETag: ' . $etag);
     header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
     header('Vary: Accept-Encoding');
@@ -55,16 +59,23 @@ if ($uri !== '/' && is_file($file)) {
         return true;
     }
 
-    $body = file_get_contents($file);
     $compressible = in_array($extension, ['js', 'css', 'svg'], true);
     if ($compressible && str_contains($_SERVER['HTTP_ACCEPT_ENCODING'] ?? '', 'gzip')) {
-        $body = gzencode($body, 6);
+        $body = gzencode(file_get_contents($file), 6);
         header('Content-Encoding: gzip');
+        header('Content-Length: ' . strlen($body));
+        if ($_SERVER['REQUEST_METHOD'] !== 'HEAD') {
+            echo $body;
+        }
+
+        return true;
     }
 
-    header('Content-Length: ' . strlen($body));
+    // Images and fonts: stream straight from disk (no copy in memory; this server
+    // handles one request at a time, so every millisecond here delays the next one).
+    header('Content-Length: ' . $size);
     if ($_SERVER['REQUEST_METHOD'] !== 'HEAD') {
-        echo $body;
+        readfile($file);
     }
 
     return true;

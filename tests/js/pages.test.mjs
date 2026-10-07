@@ -40,3 +40,20 @@ test("no page imports another page", () => {
 
     assert.deepEqual(offenders, []);
 });
+
+// The signed-in shell must be a persistent layout (`Page.layout = ...`), never rendered
+// inside the page: wrapping it remounts the sidebar and restarts the live-update pollers
+// on every click (an extra request per navigation on a one-request-at-a-time server).
+test("pages use PageLayout as a persistent layout", () => {
+    const offenders = walk(pagesDir)
+        .filter((f) => !isShared(f))
+        .filter((f) => {
+            const src = readFileSync(f, "utf8");
+            if (!src.includes("PageLayout")) return false;
+            const inline = /return\s*\(\s*<PageLayout/.test(src);
+            const persistent = /\.layout\s*=\s*\(page\)\s*=>\s*<PageLayout>\{page\}<\/PageLayout>/.test(src);
+            return inline || !persistent;
+        })
+        .map((f) => relative(root, f));
+    assert.deepEqual(offenders, []);
+});
