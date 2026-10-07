@@ -146,6 +146,8 @@ Top 3 finalists, and print signed result sheets.
   `setTimeout` every 3 s (10 s timeout, paused in hidden tabs) — never `setInterval`. The
   judge banner stays in the page flow (never floating over the group tabs); dismissals are
   kept per judge in localStorage; calls stay 2 hours.
+- PDF: no candidate photos — `buildReport` removes every `picture`/`img` from the cloned
+  table (names only; the screen keeps them).
 - PDF: `Admin/Partials/PrintButton.jsx` builds a white landscape A4 report with one signature
   line per judge; `html2pdf.js` is lazy-loaded. Keep the bottom padding and `pagebreak.avoid`
   rules (rows and the signature block must never split). **Confidentiality:** printed score

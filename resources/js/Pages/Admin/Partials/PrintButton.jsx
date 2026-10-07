@@ -18,7 +18,6 @@ const REPORT_CSS = `
 }
 .pdf-report th { background: #e5e5e5 !important; font-weight: 700 !important; }
 .pdf-report tr.pdf-top td { background: #fff1c2 !important; font-weight: 700; }
-.pdf-report img { width: 20px !important; height: 20px !important; }
 .pdf-signatures { margin-top: 36px; }
 .pdf-signatures-title { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
 .pdf-signature-list { display: flex; flex-wrap: wrap; justify-content: space-around; gap: 28px 16px; }
@@ -44,6 +43,8 @@ const buildReport = (table, reportTitle, judges) => {
     );
 
     const tableCopy = table.cloneNode(true);
+    // No candidate photos in the printout: names only (the screen keeps them).
+    tableCopy.querySelectorAll("picture, img").forEach((photo) => photo.remove());
     // Keep the rank 1 highlight from the on-screen table.
     tableCopy.querySelectorAll("tr").forEach((row) => {
         if (row.className.includes("bg-yellow")) row.classList.add("pdf-top");
