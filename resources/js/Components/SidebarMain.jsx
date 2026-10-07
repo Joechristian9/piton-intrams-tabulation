@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Head, router, usePage } from "@inertiajs/react";
 import {
     Sidebar,
@@ -36,7 +36,7 @@ const NAV_ICONS = {
 
 // The sidebar: items come from the server (`nav` shared prop) for the user's
 // event — a judge's categories, or the result pages of the event an admin has open.
-export default function SidebarMain({ children }) {
+export default function SidebarMain({ children, overlay = null }) {
     const [open, setOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -59,6 +59,24 @@ export default function SidebarMain({ children }) {
             .map((item, i) => [item.href, i]),
     );
 
+    // Fetch a page before the click lands: after the pointer rests on an item for 75 ms
+    // (as Inertia's own <Link prefetch>), or right away on touch / keyboard focus. The
+    // click then shows the prefetched page at once. Kept 10 s; the live-update pollers
+    // still reload it if its data changed after that.
+    const hoverTimer = useRef(null);
+    const prefetch = (href) => {
+        if (href !== currentPath) router.prefetch(href, { method: "get" }, { cacheFor: "10s" });
+    };
+    const prefetchProps = (href) => ({
+        onMouseEnter: () => {
+            clearTimeout(hoverTimer.current);
+            hoverTimer.current = setTimeout(() => prefetch(href), 75);
+        },
+        onMouseLeave: () => clearTimeout(hoverTimer.current),
+        onTouchStart: () => prefetch(href),
+        onFocus: () => prefetch(href),
+    });
+
     const renderNavItems = (items) =>
         items.map((item) => {
             const active = item.href === currentPath;
@@ -71,6 +89,7 @@ export default function SidebarMain({ children }) {
                 <SidebarLink
                     key={item.href}
                     active={active}
+                    {...prefetchProps(item.href)}
                     link={{
                         label: item.label,
                         icon: (
@@ -100,12 +119,14 @@ export default function SidebarMain({ children }) {
         .find((item) => item.href === currentPath);
 
     return (
-        <div className="dark">
+        // color-scheme: dark gives native scrollbars and form controls dark styling
+        // (the default light scrollbar showed as a white bar in the collapsed sidebar).
+        <div className="dark [color-scheme:dark]">
             {activeLink && <Head title={activeLink.label.trim()} />}
             <div className="flex h-screen w-full flex-1 flex-col overflow-hidden rounded-md border border-neutral-200 bg-gray-100 md:flex-row dark:border-neutral-700 dark:bg-neutral-800">
                 <Sidebar open={open} setOpen={setOpen}>
                     <SidebarBody className="justify-between gap-6">
-                        <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
+                        <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto [scrollbar-width:thin]">
                             {open ? <Logo /> : <LogoIcon />}
 
                             {nav.event && open && (
@@ -177,9 +198,16 @@ export default function SidebarMain({ children }) {
                     </SidebarBody>
                 </Sidebar>
 
-                <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
-                    {children}
-                </main>
+                <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+                    {/* scroll-region: Inertia resets/restores this scroll position on navigation
+                        (the layout is persistent, so the element itself stays the same). */}
+                    <main scroll-region="" className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
+                        {children}
+                    </main>
+                    {/* Over the content area, not inside the scrolling <main>: a page-change
+                        skeleton always covers what's visible, wherever the old page was scrolled. */}
+                    {overlay}
+                </div>
             </div>
         </div>
     );

@@ -134,7 +134,7 @@ const NotifyJudges = ({ judges = [], categories = [], progress = {}, recent = []
     const judgeName = (id) => judges.find((j) => j.id === id)?.name ?? "a judge";
 
     return (
-        <PageLayout>
+        <>
             <div className="p-4 md:p-8">
                 <div className="mb-6">
                     <h2 className="flex items-center gap-2 text-xl font-bold text-white">
@@ -349,8 +349,12 @@ const NotifyJudges = ({ judges = [], categories = [], progress = {}, recent = []
                     </section>
                 </div>
             </div>
-        </PageLayout>
+        </>
     );
 };
 
 export default NotifyJudges;
+
+// Persistent layout: the sidebar and live-update pollers stay mounted between pages
+// (no remount, no extra poll request per click).
+NotifyJudges.layout = (page) => <PageLayout>{page}</PageLayout>;

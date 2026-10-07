@@ -48,7 +48,15 @@ function CandidateForm({ event, groups, candidate, onClose }) {
 
         const payload = {
             ...data,
-            ...(photos ? { photo: photos.photo, photo_card: photos.card, photo_thumb: photos.thumb } : {}),
+            ...(photos
+                ? {
+                      photo: photos.photo,
+                      photo_card: photos.card,
+                      photo_card_small: photos.cardSmall,
+                      photo_thumb: photos.thumb,
+                      photo_thumb_small: photos.thumbSmall,
+                  }
+                : {}),
             ...(candidate ? { _method: "PUT" } : {}),
         };
         const url = candidate ? route("admin.candidates.update", candidate.id) : route("admin.candidates.store", event.id);
@@ -77,7 +85,7 @@ function CandidateForm({ event, groups, candidate, onClose }) {
                     {preview ? (
                         <img src={preview} alt="" className="h-full w-full object-cover" />
                     ) : candidate?.profile_img ? (
-                        <CandidatePhoto path={candidate.profile_img} alt="" className="h-full w-full object-cover" />
+                        <CandidatePhoto path={candidate.profile_img} alt="" sizes="96px" className="h-full w-full object-cover" />
                     ) : (
                         <div className="grid h-full place-items-center text-gray-500">
                             <ImagePlus className="h-8 w-8" aria-hidden="true" />
@@ -93,8 +101,10 @@ function CandidateForm({ event, groups, candidate, onClose }) {
                     </label>
                     <input id="cand-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={pickPhoto} className="mt-1 block w-full text-sm text-gray-300 file:mr-3 file:min-h-11 file:rounded-lg file:border-0 file:bg-neutral-700 file:px-4 file:text-white" />
                     <p className="mt-1 text-xs text-gray-400">JPG or PNG. It's resized here before uploading. Without one, a placeholder is shown.</p>
-                    {(photoError || errors.photo || errors.photo_card || errors.photo_thumb) && (
-                        <p role="alert" className="mt-1 text-sm text-red-400">{photoError ?? errors.photo ?? errors.photo_card ?? errors.photo_thumb}</p>
+                    {(photoError || errors.photo || errors.photo_card || errors.photo_card_small || errors.photo_thumb || errors.photo_thumb_small) && (
+                        <p role="alert" className="mt-1 text-sm text-red-400">
+                            {photoError ?? errors.photo ?? errors.photo_card ?? errors.photo_card_small ?? errors.photo_thumb ?? errors.photo_thumb_small}
+                        </p>
                     )}
                 </div>
             </div>

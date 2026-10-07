@@ -104,7 +104,7 @@ export const MobileSidebar = ({ className, children, ...props }) => {
         >
             <span className="flex min-w-0 items-center gap-2">
                 <picture className="contents">
-                    <source srcSet="/piton-logo.webp" type="image/webp" />
+                    <source srcSet="/piton-logo-64.webp" type="image/webp" />
                     <img src="/PITON%20LOGO.png" alt="" width={28} height={28} className="h-7 w-7 shrink-0 object-contain" />
                 </picture>
                 <span className="truncate font-medium text-black dark:text-white">PITON Tabulation</span>
@@ -196,7 +196,7 @@ export const Logo = () => {
             {/* Fixed-size logo container */}
             <div className="h-8 w-8 flex-shrink-0 flex-grow-0 relative">
                 <picture>
-                    <source srcSet="/piton-logo.webp" type="image/webp" />
+                    <source srcSet="/piton-logo-64.webp" type="image/webp" />
                     <img
                         src="/PITON%20LOGO.png"
                         alt="Piton Logo"
@@ -228,7 +228,7 @@ export const LogoIcon = () => {
         >
             <div className="h-8 w-8 flex-shrink-0 flex-grow-0 relative">
                 <picture>
-                    <source srcSet="/piton-logo.webp" type="image/webp" />
+                    <source srcSet="/piton-logo-64.webp" type="image/webp" />
                     <img
                         src="/PITON%20LOGO.png"
                         alt="Piton Logo"

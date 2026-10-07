@@ -72,12 +72,31 @@ class DevServerTest extends TestCase
 
         $this->assertSame(200, $first->status());
         $this->assertSame('image/webp', $first->header('Content-Type'));
-        $this->assertSame('public, max-age=3600', $first->header('Cache-Control'));
+        $this->assertSame('public, max-age=86400', $first->header('Cache-Control'));
+        $this->assertSame(filesize(public_path('candidates/female/1.webp')), strlen($first->body()));
         $this->assertNotEmpty($first->header('ETag'));
 
         $again = Http::withHeaders(['If-None-Match' => $first->header('ETag')])->get($this->base . '/candidates/female/1.webp');
         $this->assertSame(304, $again->status());
         $this->assertSame('', $again->body());
+    }
+
+    /** Uploaded photos get a fresh random name when replaced, so phones keep them for good. */
+    public function test_uploaded_photos_are_cached_for_a_year(): void
+    {
+        $dir = public_path('uploads/candidates/devserver-test');
+        File::ensureDirectoryExists($dir);
+        File::copy(public_path('candidates/female/1-thumb.webp'), "{$dir}/photo-thumb.webp");
+
+        try {
+            $response = Http::get($this->base . '/uploads/candidates/devserver-test/photo-thumb.webp');
+
+            $this->assertSame(200, $response->status());
+            $this->assertSame('public, max-age=31536000, immutable', $response->header('Cache-Control'));
+            $this->assertSame(filesize("{$dir}/photo-thumb.webp"), strlen($response->body()));
+        } finally {
+            File::deleteDirectory($dir);
+        }
     }
 
     public function test_app_pages_still_go_through_laravel(): void

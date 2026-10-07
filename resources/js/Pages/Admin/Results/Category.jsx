@@ -5,7 +5,7 @@ import ResultTable from "@/Pages/Admin/Partials/ResultTable";
 // One category of an event: each judge's score and the average, per group.
 export default function Category({ event, category, judges, groups }) {
     return (
-        <PageLayout>
+        <>
             <h2 className="mt-6 mb-1 flex justify-center text-xl font-bold text-white">
                 {category.name} Results
             </h2>
@@ -21,6 +21,10 @@ export default function Category({ event, category, judges, groups }) {
                     category={`${event.name} — ${category.name} ${group.name} Results`}
                 />
             ))}
-        </PageLayout>
+        </>
     );
 }
+
+// Persistent layout: the sidebar and live-update pollers stay mounted between pages
+// (no remount, no extra poll request per click).
+Category.layout = (page) => <PageLayout>{page}</PageLayout>;

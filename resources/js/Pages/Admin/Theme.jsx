@@ -241,7 +241,7 @@ export default function Theme({ presets, customThemes = [], defaultCount = 0 }) 
     };
 
     return (
-        <PageLayout>
+        <>
             <div className="p-4 text-white md:p-8">
                 <div className="mb-2 flex items-center gap-2">
                     <Palette className="h-6 w-6 text-yellow-400" aria-hidden="true" />
@@ -355,6 +355,10 @@ export default function Theme({ presets, customThemes = [], defaultCount = 0 }) 
                 </Modal>
             )}
             {deleteDialog}
-        </PageLayout>
+        </>
     );
 }
+
+// Persistent layout: the sidebar and live-update pollers stay mounted between pages
+// (no remount, no extra poll request per click).
+Theme.layout = (page) => <PageLayout>{page}</PageLayout>;

@@ -66,3 +66,64 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ── Skeletons ───────────────────────────────────────────────────────────────
+   Loading placeholders in the theme's surface color (--surface-*). Kept cheap:
+   the shimmer is a pseudo-element moved with `transform` (compositor only, no
+   repaint), it only exists while something is loading, and it stays still for
+   people who prefer reduced motion. */
+@layer components {
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: rgb(var(--surface-800));
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.06), transparent);
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  }
+
+  /* Photos: the <img> itself shimmers until it has loaded (CandidatePhoto sets
+     data-loaded), then the animation is gone. An <img> can't have ::after, so this
+     one moves the background; it only runs for the second or so a photo takes. */
+  .photo-skeleton:not([data-loaded]) {
+    background-color: rgb(var(--surface-800));
+    background-image: linear-gradient(90deg, transparent 25%, rgb(255 255 255 / 0.07) 50%, transparent 75%);
+    background-size: 200% 100%;
+    animation: skeleton-sweep 1.4s ease-in-out infinite;
+  }
+
+  /* The page skeleton shown while the app's code boots (app.blade.php) disappears by
+     itself once the app has rendered into #app — pure CSS, no script. */
+  #app:not(:empty) + .boot-skeleton {
+    display: none;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes skeleton-sweep {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    display: none;
+  }
+  .photo-skeleton:not([data-loaded]) {
+    animation: none;
+    background-image: none;
+  }
+}

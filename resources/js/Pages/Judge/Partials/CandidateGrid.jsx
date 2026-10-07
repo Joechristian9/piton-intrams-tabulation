@@ -7,7 +7,7 @@ import CandidatePhoto from "@/Components/CandidatePhoto";
 
 // One candidate's card. Memoized: typing a score re-renders only the card whose
 // value changed, not the whole grid (judges' phones have to repaint less).
-const CandidateCard = memo(function CandidateCard({ candidate, value, maxScore, disabled, onScoreChange }) {
+const CandidateCard = memo(function CandidateCard({ candidate, value, maxScore, disabled, onScoreChange, priority }) {
     const handleChange = useCallback((val) => onScoreChange(candidate.id, val), [onScoreChange, candidate.id]);
 
     return (
@@ -15,8 +15,9 @@ const CandidateCard = memo(function CandidateCard({ candidate, value, maxScore, 
             <CandidatePhoto
                 path={candidate.profile_img}
                 alt={candidateName(candidate)}
-                width={480}
-                height={720}
+                width={360}
+                height={450}
+                priority={priority}
                 className="w-full h-72 object-cover rounded-md"
             />
 
@@ -43,10 +44,12 @@ const CandidateCard = memo(function CandidateCard({ candidate, value, maxScore, 
 
 const CandidateGrid = ({ candidates, maxScore = 10, scoresRef, onScoreChange, submitted = false }) => (
     <div className="w-full p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 justify-center">
-        {candidates.map((candidate) => (
+        {candidates.map((candidate, i) => (
             <CandidateCard
                 key={candidate.id}
                 candidate={candidate}
+                // The first two cards are on screen as the page opens (one column on phones).
+                priority={i < 2}
                 // Typed draft first, then the saved score.
                 value={scoresRef.current[candidate.id] ?? candidate.existing_score ?? ""}
                 maxScore={maxScore}

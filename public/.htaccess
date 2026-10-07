@@ -31,13 +31,15 @@
 </IfModule>
 
 # Browser caching for static files, so judges' devices don't re-download them on
-# every page. Vite build files have a content hash in their name and never change.
-# Photos and logos keep their names when replaced, so they get a shorter cache.
+# every page (same rules as server.php for `php artisan serve`). Vite build files have
+# a content hash in their name and uploaded photos a fresh random name each time, so
+# they never change: a year. The original pageant's photos and the logos keep their
+# names when replaced: a day, then a cheap revalidation.
 <IfModule mod_headers.c>
-    <If "%{REQUEST_URI} =~ m#/build/assets/#">
+    <If "%{REQUEST_URI} =~ m#/(build/assets|uploads/candidates)/#">
         Header set Cache-Control "public, max-age=31536000, immutable"
     </If>
-    <ElseIf "%{REQUEST_URI} =~ m#\.(webp|jpe?g|png|ico|woff2?)$#i">
-        Header set Cache-Control "public, max-age=3600"
+    <ElseIf "%{REQUEST_URI} =~ m#\.(webp|jpe?g|png|ico|svg|woff2?)$#i">
+        Header set Cache-Control "public, max-age=86400"
     </ElseIf>
 </IfModule>

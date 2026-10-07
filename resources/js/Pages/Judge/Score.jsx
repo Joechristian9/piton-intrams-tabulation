@@ -105,7 +105,7 @@ export default function Score({ category, groups, roundClosed, finalistsPerGroup
     }));
 
     return (
-        <PageLayout>
+        <>
             <div className="relative my-10 flex w-full flex-col items-center px-4">
                 <div className="w-full max-w-8xl">
                     {roundClosed && <RoundClosedNotice count={finalistsPerGroup} />}
@@ -116,6 +116,10 @@ export default function Score({ category, groups, roundClosed, finalistsPerGroup
                     )}
                 </div>
             </div>
-        </PageLayout>
+        </>
     );
 }
+
+// Persistent layout: the sidebar and live-update pollers stay mounted between pages
+// (no remount, no extra poll request per click).
+Score.layout = (page) => <PageLayout>{page}</PageLayout>;
